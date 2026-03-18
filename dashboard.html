@@ -393,13 +393,16 @@
   <!-- ===== HOME PAGE ===== -->
   <div id="page-home" class="page">
     <div class="greeting-row">
-      <div class="greeting-title">Good evening, Lloyd 👋</div>
-      <div class="greeting-sub">Tuesday, 17 March 2026 — <span style="color:var(--text-muted)">Live data • Last sync 2 min ago</span></div>
+      <div class="greeting-title">Hello Lloyd 👋</div>
+      <div class="greeting-sub" id="home-store-line" style="display:flex;align-items:center;gap:6px">
+        Store — <span id="home-store-code" style="color:var(--accent-blue);font-weight:600">No store selected</span>
+        <span onclick="renameActiveStore()" style="cursor:pointer;font-size:12px;opacity:0.6" title="Rename store">✏️</span>
+      </div>
+      <div class="greeting-sub" style="margin-top:2px"></div>
       <div class="conn-badges" style="margin-top:8px" id="home-conn-badges">
         <span class="pill gray">✗ Meta Ads</span>
         <span class="pill gray" id="home-shopify-badge">✗ Shopify not connected</span>
         <span class="pill gray">✗ Outlook</span>
-        <button class="btn btn-primary btn-sm" onclick="openShopifyModal()" style="margin-left:4px">🛍 Connect Shopify</button>
       </div>
     </div>
 
@@ -1108,10 +1111,26 @@ function setActiveStore(id) {
   showPage('home');
 }
 function updateTopbarStoreName() {
-  const el = document.getElementById('topbar-store-name');
-  if (!el) return;
   const s = getActiveStore();
-  el.textContent = s ? (s.name || s.shopifyStore || 'Unnamed Store') : 'No store selected';
+  const name = s ? (s.name || s.shopifyStore || 'Unnamed Store') : 'No store selected';
+  const el = document.getElementById('topbar-store-name');
+  if (el) el.textContent = name;
+  const homeCode = document.getElementById('home-store-code');
+  if (homeCode) homeCode.textContent = s ? (s.shopifyStore || name) : 'No store selected';
+}
+function renameActiveStore() {
+  const s = getActiveStore();
+  if (!s) return alert('No active store to rename.');
+  const newName = prompt('Enter a nickname for this store:', s.name || s.shopifyStore || '');
+  if (newName === null) return;
+  const stores = getStores();
+  const idx = stores.findIndex(st => st.id === s.id);
+  if (idx >= 0) {
+    stores[idx].name = newName.trim() || stores[idx].shopifyStore;
+    saveStores(stores);
+    updateTopbarStoreName();
+    renderAccountsPage();
+  }
 }
 function addStore(store) {
   const stores = getStores();
