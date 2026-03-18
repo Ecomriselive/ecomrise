@@ -323,9 +323,9 @@
   <div class="search-bar"><input type="text" placeholder="🔍 Search..." /></div>
   <div class="topbar-spacer"></div>
   <div class="topbar-actions">
-    <div class="account-pill">
+    <div class="account-pill" onclick="showPage('accounts')">
       <span style="font-size:11px;color:var(--text-secondary)">↕</span>
-      <span style="font-size:12px;font-weight:600">Jerge Ladru</span>
+      <span style="font-size:12px;font-weight:600" id="topbar-store-name">No store selected</span>
       <span style="font-size:10px;color:var(--text-muted)">▾</span>
     </div>
     <div class="tokens-pill">⚡ <span>100</span> <span style="color:var(--text-muted);font-size:10px">tokens</span></div>
@@ -1031,8 +1031,15 @@ function setActiveStore(id) {
   localStorage.setItem('ecr_active_store', id);
   ShopifyAPI.clearCache();
   updateShopifyBadge();
+  updateTopbarStoreName();
   renderAccountsPage();
-  loadShopifyData(true);
+  showPage('home');
+}
+function updateTopbarStoreName() {
+  const el = document.getElementById('topbar-store-name');
+  if (!el) return;
+  const s = getActiveStore();
+  el.textContent = s ? (s.name || s.shopifyStore || 'Unnamed Store') : 'No store selected';
 }
 function addStore(store) {
   const stores = getStores();
@@ -1802,6 +1809,7 @@ function signOut() {
 
 // ===== INIT =====
 updateShopifyBadge();
+updateTopbarStoreName();
 renderAccountsPage();
 showPage('home');
 </script>
