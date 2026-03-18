@@ -464,21 +464,12 @@
   <!-- ===== ACCOUNTS PAGE ===== -->
   <div id="page-accounts" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">Accounts Overview</div><div class="page-subtitle" style="color:var(--accent-blue)">1 Account</div></div>
-      <button class="btn btn-secondary btn-sm">↻ Refresh</button>
+      <div><div class="page-title">All Accounts</div><div class="page-subtitle" id="accounts-subtitle" style="color:var(--accent-blue)">Manage your connected stores</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="renderAccountsPage()">↻ Refresh</button>
     </div>
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;display:inline-block;min-width:220px;margin-top:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-size:14px;font-weight:700">Jerge Ladru</span><span class="pill blue">Admin</span></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Spend</div><div style="font-size:15px;font-weight:700">€0.00</div></div>
-        <div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Revenue</div><div style="font-size:15px;font-weight:700">€4.03</div></div>
-        <div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">ROAS</div><div style="font-size:15px;font-weight:700">0.00x</div></div>
-        <div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Shopify Rev</div><div style="font-size:15px;font-weight:700">€0.00</div></div>
-        <div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Purchases</div><div style="font-size:15px;font-weight:700">0</div></div>
-        <div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Orders</div><div style="font-size:15px;font-weight:700">0</div></div>
-      </div>
-      <div style="display:flex;gap:6px"><span class="pill green">Meta connected</span><span class="pill green">Shopify connected</span></div>
-    </div>
+
+    <!-- Store cards rendered dynamically -->
+    <div id="accounts-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:16px"></div>
   </div>
 
   <!-- ===== SHOPIFY PAGE ===== -->
@@ -1025,16 +1016,50 @@
 </div>
 
 <script>
-// ===== SHOPIFY CREDENTIALS (from localStorage) =====
-function getShopifyCreds() {
-  return {
-    store: localStorage.getItem('ecr_shopify_store') || '',
-    token: localStorage.getItem('ecr_shopify_token') || ''
-  };
+// ===== MULTI-STORE MANAGEMENT =====
+function getStores() {
+  try { return JSON.parse(localStorage.getItem('ecr_stores') || '[]'); }
+  catch { return []; }
+}
+function saveStores(stores) { localStorage.setItem('ecr_stores', JSON.stringify(stores)); }
+function getActiveStore() {
+  const stores = getStores();
+  const activeId = localStorage.getItem('ecr_active_store');
+  return stores.find(s => s.id === activeId) || stores[0] || null;
+}
+function setActiveStore(id) {
+  localStorage.setItem('ecr_active_store', id);
+  ShopifyAPI.clearCache();
+  updateShopifyBadge();
+  renderAccountsPage();
+  loadShopifyData(true);
+}
+function addStore(store) {
+  const stores = getStores();
+  store.id = store.id || 'store_' + Date.now();
+  stores.push(store);
+  saveStores(stores);
+  if (stores.length === 1) setActiveStore(store.id);
+  return store;
+}
+function removeStore(id) {
+  let stores = getStores();
+  stores = stores.filter(s => s.id !== id);
+  saveStores(stores);
+  if (localStorage.getItem('ecr_active_store') === id) {
+    localStorage.setItem('ecr_active_store', stores[0]?.id || '');
+  }
+  ShopifyAPI.clearCache();
+  updateShopifyBadge();
+  renderAccountsPage();
 }
 function isShopifyConnected() {
-  const c = getShopifyCreds();
-  return c.store && c.token;
+  const s = getActiveStore();
+  return s && s.shopifyStore && s.shopifyToken;
+}
+function getShopifyCreds() {
+  const s = getActiveStore();
+  return { store: s?.shopifyStore || '', token: s?.shopifyToken || '' };
 }
 
 // ===== SHOPIFY API MODULE =====
@@ -1082,30 +1107,102 @@ const ShopifyAPI = {
   }
 };
 
-// ===== SHOPIFY CONNECT MODAL =====
-function openShopifyModal() {
+// ===== ACCOUNTS PAGE RENDERER =====
+function renderAccountsPage() {
+  const grid = document.getElementById('accounts-grid');
+  if (!grid) return;
+  const stores = getStores();
+  const activeStore = getActiveStore();
+  const subtitle = document.getElementById('accounts-subtitle');
+  if (subtitle) subtitle.textContent = stores.length > 0 ? `${stores.length} store${stores.length > 1 ? 's' : ''} connected` : 'No stores connected yet';
+
+  let html = '';
+
+  // Render each store card
+  stores.forEach(s => {
+    const isActive = activeStore && s.id === activeStore.id;
+    const shopifyOk = s.shopifyStore && s.shopifyToken;
+    const metaOk = s.metaToken;
+    html += `
+    <div style="background:var(--bg-card);border:2px solid ${isActive ? 'var(--accent-blue)' : 'var(--border)'};border-radius:10px;padding:16px;position:relative;transition:all 0.2s;cursor:pointer" onclick="setActiveStore('${s.id}')">
+      ${isActive ? '<div style="position:absolute;top:-8px;right:12px"><span class="pill blue" style="font-size:10px">✓ ACTIVE</span></div>' : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:14px;font-weight:700">${s.name || s.shopifyStore || 'Unnamed Store'}</span>
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();removeStore('${s.id}')" style="color:var(--accent-red);font-size:10px;padding:2px 6px" title="Remove store">✕</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg-secondary);border-radius:6px">
+          <div>
+            <div style="font-size:12px;font-weight:600">🛍 Shopify</div>
+            <div style="font-size:11px;color:${shopifyOk ? 'var(--accent-green)' : 'var(--text-muted)'}">${shopifyOk ? '● Connected — ' + s.shopifyStore : '○ Not connected'}</div>
+          </div>
+          <button class="btn ${shopifyOk ? 'btn-secondary' : 'btn-primary'} btn-sm" onclick="event.stopPropagation();openShopifyModal('${s.id}')">${shopifyOk ? 'Manage' : 'Connect'}</button>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg-secondary);border-radius:6px">
+          <div>
+            <div style="font-size:12px;font-weight:600">📊 Meta Ads</div>
+            <div style="font-size:11px;color:${metaOk ? 'var(--accent-green)' : 'var(--text-muted)'}">${metaOk ? '● Connected' : '○ Not connected'}</div>
+          </div>
+          <button class="btn ${metaOk ? 'btn-secondary' : 'btn-primary'} btn-sm" onclick="event.stopPropagation();alert('Meta Ads connection coming soon!')">${metaOk ? 'Manage' : 'Connect'}</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px">
+        ${shopifyOk ? '<span class="pill green">Shopify connected</span>' : '<span class="pill gray">Shopify not connected</span>'}
+        ${metaOk ? '<span class="pill green">Meta connected</span>' : '<span class="pill gray">Meta not connected</span>'}
+      </div>
+    </div>`;
+  });
+
+  // Add New Store card
+  html += `
+  <div style="background:var(--bg-card);border:2px dashed var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;cursor:pointer;transition:all 0.2s" onclick="openShopifyModal('new')" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="font-size:32px;margin-bottom:8px;opacity:0.5">➕</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:4px">Connect New Store</div>
+    <div style="font-size:12px;color:var(--text-muted);text-align:center">Add a Shopify store and connect Meta Ads</div>
+  </div>`;
+
+  grid.innerHTML = html;
+}
+
+// ===== CONNECT SHOPIFY MODAL =====
+let editingStoreId = null;
+
+function openShopifyModal(storeId) {
+  editingStoreId = storeId;
   const modal = document.getElementById('shopifyModal');
   modal.style.display = 'flex';
-  const creds = getShopifyCreds();
-  if (creds.store) document.getElementById('shopify-store-input').value = creds.store;
-  if (creds.token) document.getElementById('shopify-token-input').value = creds.token;
-  updateShopifyModalStatus();
+  const statusEl = document.getElementById('shopify-modal-status');
+  const connInfo = document.getElementById('shopify-connected-info');
+
+  if (storeId === 'new') {
+    document.getElementById('shopify-store-input').value = '';
+    document.getElementById('shopify-token-input').value = '';
+    connInfo.style.display = 'none';
+    statusEl.innerHTML = '<div style="background:rgba(56,139,253,0.1);border:1px solid rgba(56,139,253,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-blue)">Enter your Shopify store URL and Admin API access token to connect a new store.</div>';
+  } else {
+    const stores = getStores();
+    const store = stores.find(s => s.id === storeId);
+    if (store) {
+      document.getElementById('shopify-store-input').value = store.shopifyStore || '';
+      document.getElementById('shopify-token-input').value = store.shopifyToken || '';
+      if (store.shopifyStore && store.shopifyToken) {
+        connInfo.style.display = 'block';
+        document.getElementById('shopify-shop-name').textContent = '✓ Connected to ' + (store.name || store.shopifyStore);
+        document.getElementById('shopify-shop-url').textContent = store.shopifyStore;
+        statusEl.innerHTML = '';
+      } else {
+        connInfo.style.display = 'none';
+        statusEl.innerHTML = '<div style="background:rgba(56,139,253,0.1);border:1px solid rgba(56,139,253,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-blue)">Enter your Shopify credentials to connect this store.</div>';
+      }
+    }
+  }
 }
 function closeShopifyModal() {
   document.getElementById('shopifyModal').style.display = 'none';
-}
-function updateShopifyModalStatus() {
-  const info = document.getElementById('shopify-connected-info');
-  const statusEl = document.getElementById('shopify-modal-status');
-  if (isShopifyConnected()) {
-    const creds = getShopifyCreds();
-    info.style.display = 'block';
-    document.getElementById('shopify-shop-url').textContent = creds.store;
-    statusEl.innerHTML = '';
-  } else {
-    info.style.display = 'none';
-    statusEl.innerHTML = '<div style="background:rgba(56,139,253,0.1);border:1px solid rgba(56,139,253,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-blue)">Enter your Shopify store URL and Admin API access token to connect your store.</div>';
-  }
+  editingStoreId = null;
 }
 async function testShopifyConnection() {
   const storeInput = document.getElementById('shopify-store-input');
@@ -1131,23 +1228,34 @@ async function testShopifyConnection() {
     const data = await res.json();
     
     if (data.connected) {
-      // Save credentials
-      localStorage.setItem('ecr_shopify_store', store);
-      localStorage.setItem('ecr_shopify_token', token);
-      
-      document.getElementById('shopify-shop-name').textContent = '✓ Connected to ' + (data.shop || store);
+      const shopName = data.shop || store;
+
+      if (editingStoreId === 'new') {
+        // Add new store
+        const newStore = addStore({ name: shopName, shopifyStore: store, shopifyToken: token, metaToken: '' });
+        setActiveStore(newStore.id);
+      } else {
+        // Update existing store
+        const stores = getStores();
+        const idx = stores.findIndex(s => s.id === editingStoreId);
+        if (idx >= 0) {
+          stores[idx].shopifyStore = store;
+          stores[idx].shopifyToken = token;
+          stores[idx].name = shopName;
+          saveStores(stores);
+        }
+      }
+
+      document.getElementById('shopify-shop-name').textContent = '✓ Connected to ' + shopName;
       document.getElementById('shopify-shop-url').textContent = store;
       document.getElementById('shopify-connected-info').style.display = 'block';
       statusEl.innerHTML = '<div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-green)">✅ Connected successfully! Your live data will load now.</div>';
       
-      // Update the home page badge
       updateShopifyBadge();
-      
-      // Load live data
       ShopifyAPI.clearCache();
       loadShopifyData(true);
+      renderAccountsPage();
       
-      // Close modal after 2 seconds
       setTimeout(() => closeShopifyModal(), 2000);
     } else {
       statusEl.innerHTML = `<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ ${data.message || 'Connection failed. Check your credentials.'}</div>`;
@@ -1160,13 +1268,21 @@ async function testShopifyConnection() {
   btn.disabled = false;
 }
 function disconnectShopify() {
-  localStorage.removeItem('ecr_shopify_store');
-  localStorage.removeItem('ecr_shopify_token');
+  if (editingStoreId && editingStoreId !== 'new') {
+    const stores = getStores();
+    const idx = stores.findIndex(s => s.id === editingStoreId);
+    if (idx >= 0) {
+      stores[idx].shopifyStore = '';
+      stores[idx].shopifyToken = '';
+      saveStores(stores);
+    }
+  }
   document.getElementById('shopify-store-input').value = '';
   document.getElementById('shopify-token-input').value = '';
   document.getElementById('shopify-connected-info').style.display = 'none';
-  updateShopifyModalStatus();
+  document.getElementById('shopify-modal-status').innerHTML = '<div style="background:rgba(56,139,253,0.1);border:1px solid rgba(56,139,253,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-blue)">Store disconnected. Enter new credentials to reconnect.</div>';
   updateShopifyBadge();
+  renderAccountsPage();
 }
 function updateShopifyBadge() {
   const badge = document.getElementById('home-shopify-badge');
@@ -1200,6 +1316,7 @@ function showPage(id) {
 
   // Load live data for relevant pages
   if (id === 'home' || id === 'shopify') loadShopifyData();
+  if (id === 'accounts') renderAccountsPage();
 }
 
 // ===== LOAD LIVE SHOPIFY DATA =====
@@ -1685,6 +1802,7 @@ function signOut() {
 
 // ===== INIT =====
 updateShopifyBadge();
+renderAccountsPage();
 showPage('home');
 </script>
 </body>
