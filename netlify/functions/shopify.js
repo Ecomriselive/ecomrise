@@ -1,17 +1,17 @@
 // Shopify Admin API Proxy — Netlify Function
-// Reads SHOPIFY_STORE and SHOPIFY_ACCESS_TOKEN from environment variables
+// Credentials: checks request headers first, then falls back to env vars
 
 exports.handler = async (event) => {
-  // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(), body: '' };
   }
 
-  const store = process.env.SHOPIFY_STORE;
-  const token = process.env.SHOPIFY_ACCESS_TOKEN;
+  // Get credentials: prefer request headers, fallback to env vars
+  const store = event.headers['x-shopify-store'] || process.env.SHOPIFY_STORE;
+  const token = event.headers['x-shopify-token'] || process.env.SHOPIFY_ACCESS_TOKEN;
 
   if (!store || !token) {
-    return respond(500, { error: 'Shopify credentials not configured. Set SHOPIFY_STORE and SHOPIFY_ACCESS_TOKEN in Netlify env vars.' });
+    return respond(401, { error: 'not_connected', message: 'Shopify not connected. Please add your store URL and access token.' });
   }
 
   const action = event.queryStringParameters?.action || 'orders';
@@ -20,6 +20,13 @@ exports.handler = async (event) => {
   try {
     switch (action) {
 
+      // ─── TEST: verify connection works ───
+      case 'test': {
+        const url = `${baseUrl}/shop.json`;
+        const data = await shopifyFetch(url, token);
+        return respond(200, { connected: true, shop: data.shop?.name || store });
+      }
+
       // ─── ORDERS: recent orders with full details ───
       case 'orders': {
         const limit = event.queryStringParameters?.limit || 50;
@@ -27,7 +34,6 @@ exports.handler = async (event) => {
         const url = `${baseUrl}/orders.json?status=any&limit=${limit}&created_at_min=${sinceDate}T00:00:00Z&order=created_at+desc`;
         const data = await shopifyFetch(url, token);
         
-        // Build clean order list
         const orders = (data.orders || []).map(o => ({
           id: o.id,
           name: o.name,
@@ -56,7 +62,6 @@ exports.handler = async (event) => {
         const since = event.queryStringParameters?.since || thirtyDaysAgo();
         const until = event.queryStringParameters?.until || todayStr();
         
-        // Fetch all orders in the date range (paginate if needed)
         let allOrders = [];
         let url = `${baseUrl}/orders.json?status=any&limit=250&created_at_min=${since}T00:00:00Z&created_at_max=${until}T23:59:59Z&order=created_at+desc`;
         
@@ -64,13 +69,10 @@ exports.handler = async (event) => {
           const res = await shopifyFetchRaw(url, token);
           const data = await res.json();
           allOrders = allOrders.concat(data.orders || []);
-          
-          // Check for pagination
           const linkHeader = res.headers.get('link');
           url = getNextPageUrl(linkHeader);
         }
 
-        // Calculate stats
         const totalRevenue = allOrders.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
         const totalOrders = allOrders.length;
         const aov = totalOrders > 0 ? totalRevenue / totalOrders : 0;
@@ -82,7 +84,6 @@ exports.handler = async (event) => {
         const unfulfilledOrders = allOrders.filter(o => !o.fulfillment_status || o.fulfillment_status === 'unfulfilled' || o.fulfillment_status === null);
         const cancelledOrders = allOrders.filter(o => o.cancelled_at);
 
-        // Top products
         const productMap = {};
         allOrders.forEach(o => {
           (o.line_items || []).forEach(li => {
@@ -94,7 +95,6 @@ exports.handler = async (event) => {
         });
         const topProducts = Object.values(productMap).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
 
-        // Country breakdown
         const countryMap = {};
         allOrders.forEach(o => {
           const country = o.shipping_address?.country || o.billing_address?.country || 'Unknown';
@@ -104,7 +104,6 @@ exports.handler = async (event) => {
         });
         const topCountries = Object.values(countryMap).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
 
-        // Daily revenue breakdown
         const dailyMap = {};
         allOrders.forEach(o => {
           const day = o.created_at.substring(0, 10);
@@ -114,7 +113,6 @@ exports.handler = async (event) => {
         });
         const dailyData = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
 
-        // New vs returning customers
         const customerEmails = {};
         allOrders.forEach(o => {
           const email = o.customer?.email || o.email || '';
@@ -127,10 +125,8 @@ exports.handler = async (event) => {
         const returningCustomers = Object.values(customerEmails).filter(c => c > 1).length;
         const newCustomers = totalCustomers - returningCustomers;
 
-        // Checkout data (from orders that reached checkout)
-        const reachedCheckout = allOrders.length;  // All orders reached checkout
         const completedPurchase = allOrders.filter(o => o.financial_status !== 'voided' && !o.cancelled_at).length;
-        const abandoned = reachedCheckout - completedPurchase;
+        const abandoned = totalOrders - completedPurchase;
 
         return respond(200, {
           totalRevenue: round2(totalRevenue),
@@ -150,10 +146,10 @@ exports.handler = async (event) => {
           newCustomers,
           returningCustomers,
           totalCustomers,
-          reachedCheckout,
+          reachedCheckout: totalOrders,
           completedPurchase,
           abandoned,
-          checkoutConversion: reachedCheckout > 0 ? round2((completedPurchase / reachedCheckout) * 100) : 0,
+          checkoutConversion: totalOrders > 0 ? round2((completedPurchase / totalOrders) * 100) : 0,
           dateRange: { since, until }
         });
       }
@@ -163,16 +159,14 @@ exports.handler = async (event) => {
     }
   } catch (err) {
     console.error('Shopify API error:', err);
-    return respond(500, { error: 'Shopify API request failed', details: err.message });
+    return respond(500, { error: 'api_error', message: 'Shopify API request failed: ' + err.message });
   }
 };
-
-// ─── Helpers ───
 
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Shopify-Store, X-Shopify-Token',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Content-Type': 'application/json'
   };
@@ -184,10 +178,7 @@ function respond(statusCode, body) {
 
 async function shopifyFetch(url, token) {
   const res = await fetch(url, {
-    headers: {
-      'X-Shopify-Access-Token': token,
-      'Content-Type': 'application/json'
-    }
+    headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' }
   });
   if (!res.ok) {
     const text = await res.text();
@@ -198,10 +189,7 @@ async function shopifyFetch(url, token) {
 
 async function shopifyFetchRaw(url, token) {
   const res = await fetch(url, {
-    headers: {
-      'X-Shopify-Access-Token': token,
-      'Content-Type': 'application/json'
-    }
+    headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' }
   });
   if (!res.ok) {
     const text = await res.text();
@@ -217,15 +205,10 @@ function getNextPageUrl(linkHeader) {
 }
 
 function thirtyDaysAgo() {
-  const d = new Date();
-  d.setDate(d.getDate() - 30);
+  const d = new Date(); d.setDate(d.getDate() - 30);
   return d.toISOString().substring(0, 10);
 }
 
-function todayStr() {
-  return new Date().toISOString().substring(0, 10);
-}
+function todayStr() { return new Date().toISOString().substring(0, 10); }
 
-function round2(n) {
-  return Math.round(n * 100) / 100;
-}
+function round2(n) { return Math.round(n * 100) / 100; }

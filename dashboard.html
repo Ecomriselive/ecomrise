@@ -395,11 +395,11 @@
     <div class="greeting-row">
       <div class="greeting-title">Good evening, Lloyd 👋</div>
       <div class="greeting-sub">Tuesday, 17 March 2026 — <span style="color:var(--text-muted)">Live data • Last sync 2 min ago</span></div>
-      <div class="conn-badges" style="margin-top:8px">
-        <span class="pill green">✓ Meta Ads live</span>
-        <span class="pill blue">✓ Shopify live</span>
-        <span class="pill red">✗ Outlook not connected</span>
-        <span class="pill gray">✓ Notify</span>
+      <div class="conn-badges" style="margin-top:8px" id="home-conn-badges">
+        <span class="pill gray">✗ Meta Ads</span>
+        <span class="pill gray" id="home-shopify-badge">✗ Shopify not connected</span>
+        <span class="pill gray">✗ Outlook</span>
+        <button class="btn btn-primary btn-sm" onclick="openShopifyModal()" style="margin-left:4px">🛍 Connect Shopify</button>
       </div>
     </div>
 
@@ -989,20 +989,72 @@
   </div>
 </div>
 
+<!-- CONNECT SHOPIFY MODAL -->
+<div class="modal-overlay" id="shopifyModal" style="display:none">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">🛍 Connect Shopify Store</div>
+      <button class="modal-close" onclick="closeShopifyModal()">✕</button>
+    </div>
+    <div id="shopify-modal-status" style="margin-bottom:12px"></div>
+    <div class="finance-input-group">
+      <label>Store URL</label>
+      <input type="text" id="shopify-store-input" placeholder="your-store.myshopify.com" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%">
+      <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Example: 2cdq2x-sz.myshopify.com</div>
+    </div>
+    <div class="finance-input-group" style="margin-top:10px">
+      <label>Admin API Access Token</label>
+      <input type="password" id="shopify-token-input" placeholder="shpat_xxxxxxxxxxxxx" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%">
+      <div style="font-size:10px;color:var(--text-muted);margin-top:3px">From Shopify Admin → Settings → Apps → Develop apps → Your app → API credentials</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" onclick="testShopifyConnection()" id="shopify-test-btn" style="flex:1;justify-content:center">🔗 Test Connection</button>
+      <button class="btn btn-secondary" onclick="closeShopifyModal()">Cancel</button>
+    </div>
+    <div id="shopify-connected-info" style="margin-top:12px;display:none">
+      <div style="background:#1a3a1a;border:1px solid #2ea04326;border-radius:6px;padding:10px;display:flex;align-items:center;gap:8px">
+        <span style="color:var(--accent-green);font-size:16px">✓</span>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--accent-green)" id="shopify-shop-name">Connected</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="shopify-shop-url"></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="disconnectShopify()" style="margin-left:auto;color:var(--accent-red)">Disconnect</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+// ===== SHOPIFY CREDENTIALS (from localStorage) =====
+function getShopifyCreds() {
+  return {
+    store: localStorage.getItem('ecr_shopify_store') || '',
+    token: localStorage.getItem('ecr_shopify_token') || ''
+  };
+}
+function isShopifyConnected() {
+  const c = getShopifyCreds();
+  return c.store && c.token;
+}
+
 // ===== SHOPIFY API MODULE =====
 const ShopifyAPI = {
   cache: {},
-  cacheExpiry: 5 * 60 * 1000, // 5 min cache
+  cacheExpiry: 5 * 60 * 1000,
 
   async fetch(action, params = {}) {
+    if (!isShopifyConnected()) return null;
+
     const cacheKey = action + JSON.stringify(params);
     const cached = this.cache[cacheKey];
     if (cached && Date.now() - cached.time < this.cacheExpiry) return cached.data;
 
+    const creds = getShopifyCreds();
     const qs = new URLSearchParams({ action, ...params }).toString();
     try {
-      const res = await fetch(`/.netlify/functions/shopify?${qs}`);
+      const res = await fetch(`/.netlify/functions/shopify?${qs}`, {
+        headers: { 'X-Shopify-Store': creds.store, 'X-Shopify-Token': creds.token }
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -1029,6 +1081,104 @@ const ShopifyAPI = {
     return this.fetch('orders', params);
   }
 };
+
+// ===== SHOPIFY CONNECT MODAL =====
+function openShopifyModal() {
+  const modal = document.getElementById('shopifyModal');
+  modal.style.display = 'flex';
+  const creds = getShopifyCreds();
+  if (creds.store) document.getElementById('shopify-store-input').value = creds.store;
+  if (creds.token) document.getElementById('shopify-token-input').value = creds.token;
+  updateShopifyModalStatus();
+}
+function closeShopifyModal() {
+  document.getElementById('shopifyModal').style.display = 'none';
+}
+function updateShopifyModalStatus() {
+  const info = document.getElementById('shopify-connected-info');
+  const statusEl = document.getElementById('shopify-modal-status');
+  if (isShopifyConnected()) {
+    const creds = getShopifyCreds();
+    info.style.display = 'block';
+    document.getElementById('shopify-shop-url').textContent = creds.store;
+    statusEl.innerHTML = '';
+  } else {
+    info.style.display = 'none';
+    statusEl.innerHTML = '<div style="background:rgba(56,139,253,0.1);border:1px solid rgba(56,139,253,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-blue)">Enter your Shopify store URL and Admin API access token to connect your store.</div>';
+  }
+}
+async function testShopifyConnection() {
+  const storeInput = document.getElementById('shopify-store-input');
+  const tokenInput = document.getElementById('shopify-token-input');
+  const btn = document.getElementById('shopify-test-btn');
+  const statusEl = document.getElementById('shopify-modal-status');
+  
+  const store = storeInput.value.trim().replace('https://','').replace('http://','').replace(/\/$/,'');
+  const token = tokenInput.value.trim();
+
+  if (!store || !token) {
+    statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Please enter both store URL and access token.</div>';
+    return;
+  }
+
+  btn.textContent = '⏳ Testing...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/.netlify/functions/shopify?action=test', {
+      headers: { 'X-Shopify-Store': store, 'X-Shopify-Token': token }
+    });
+    const data = await res.json();
+    
+    if (data.connected) {
+      // Save credentials
+      localStorage.setItem('ecr_shopify_store', store);
+      localStorage.setItem('ecr_shopify_token', token);
+      
+      document.getElementById('shopify-shop-name').textContent = '✓ Connected to ' + (data.shop || store);
+      document.getElementById('shopify-shop-url').textContent = store;
+      document.getElementById('shopify-connected-info').style.display = 'block';
+      statusEl.innerHTML = '<div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-green)">✅ Connected successfully! Your live data will load now.</div>';
+      
+      // Update the home page badge
+      updateShopifyBadge();
+      
+      // Load live data
+      ShopifyAPI.clearCache();
+      loadShopifyData(true);
+      
+      // Close modal after 2 seconds
+      setTimeout(() => closeShopifyModal(), 2000);
+    } else {
+      statusEl.innerHTML = `<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ ${data.message || 'Connection failed. Check your credentials.'}</div>`;
+    }
+  } catch (err) {
+    statusEl.innerHTML = `<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Connection error: ${err.message}</div>`;
+  }
+  
+  btn.textContent = '🔗 Test Connection';
+  btn.disabled = false;
+}
+function disconnectShopify() {
+  localStorage.removeItem('ecr_shopify_store');
+  localStorage.removeItem('ecr_shopify_token');
+  document.getElementById('shopify-store-input').value = '';
+  document.getElementById('shopify-token-input').value = '';
+  document.getElementById('shopify-connected-info').style.display = 'none';
+  updateShopifyModalStatus();
+  updateShopifyBadge();
+}
+function updateShopifyBadge() {
+  const badge = document.getElementById('home-shopify-badge');
+  if (!badge) return;
+  if (isShopifyConnected()) {
+    badge.className = 'pill green';
+    badge.textContent = '✓ Shopify live';
+  } else {
+    badge.className = 'pill gray';
+    badge.textContent = '✗ Shopify not connected';
+  }
+}
 
 // ===== LIVE DATA STATE =====
 let liveShopifyStats = null;
@@ -1534,6 +1684,7 @@ function signOut() {
 }
 
 // ===== INIT =====
+updateShopifyBadge();
 showPage('home');
 </script>
 </body>
