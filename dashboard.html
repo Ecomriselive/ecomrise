@@ -1007,46 +1007,55 @@
       <div onclick="document.getElementById('token-help').style.display = document.getElementById('token-help').style.display === 'none' ? 'block' : 'none'" style="font-size:11px;color:var(--accent-blue);cursor:pointer;display:flex;align-items:center;gap:4px">
         <span>❓</span> <span style="text-decoration:underline">How do I get my Client ID & Secret?</span>
       </div>
-      <div id="token-help" style="display:none;margin-top:8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;line-height:1.7;color:var(--text-secondary)">
-        <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px">🛍 Create an Ecom Rise app on Shopify</div>
+      <div id="token-help" style="display:none;margin-top:8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;line-height:1.7;color:var(--text-secondary);max-height:350px;overflow-y:auto">
+        <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px">🛍 Create an Ecom Rise app on your Shopify store</div>
 
-        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 1 — Go to the Shopify Developer Dashboard</div>
-        <div style="margin-bottom:8px">
-          Open <a href="https://partners.shopify.com" target="_blank" style="color:var(--accent-blue);text-decoration:underline">partners.shopify.com</a> and log in.<br>
-          Click <strong>"Apps"</strong> in the left sidebar → <strong>"Create app"</strong><br>
-          Choose <strong>"Create app manually"</strong>.
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 1 — Open Develop Apps</div>
+        <div style="margin-bottom:10px">
+          In your <strong>Shopify Admin</strong>, go to:<br>
+          <strong>Settings</strong> → <strong>Apps and sales channels</strong> → <strong>Develop apps</strong><br>
+          Click <strong>"Build apps in Dev Dashboard"</strong><br>
+          <span style="color:var(--text-muted);font-size:11px">(This opens the Shopify Dev Dashboard — no separate account needed, it uses your store login)</span>
         </div>
 
-        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 2 — Name and Configure the App</div>
-        <div style="margin-bottom:8px">
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 2 — Create a New App</div>
+        <div style="margin-bottom:10px">
+          In the Dev Dashboard, click <strong>"Create an app"</strong> → <strong>"Create app manually"</strong><br>
           App name: <code style="background:var(--bg-card);padding:1px 6px;border-radius:4px;color:var(--accent-blue)">Ecom Rise</code><br>
-          Click <strong>"Create app"</strong>.<br>
-          Go to <strong>"Configuration"</strong> → under <strong>Admin API access scopes</strong>, add:<br>
+          Click <strong>"Create app"</strong>
+        </div>
+
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 3 — Set API Permissions</div>
+        <div style="margin-bottom:10px">
+          Go to <strong>"Configuration"</strong> tab<br>
+          Under <strong>Admin API access scopes</strong>, search for and add these permissions:<br>
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 4px 8px">
             <span class="pill blue" style="font-size:10px">read_orders</span>
             <span class="pill blue" style="font-size:10px">read_products</span>
             <span class="pill blue" style="font-size:10px">read_customers</span>
             <span class="pill blue" style="font-size:10px">read_inventory</span>
           </div>
-          Click <strong>"Save"</strong>.
+          Click <strong>"Save"</strong>
         </div>
 
-        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 3 — Get your Client ID & Client Secret</div>
-        <div style="margin-bottom:8px">
-          Go to <strong>"API credentials"</strong> tab.<br>
-          Copy your <strong>Client ID</strong> and <strong>Client Secret</strong>.
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 4 — Copy Client ID & Client Secret</div>
+        <div style="margin-bottom:10px">
+          Go to the <strong>"API credentials"</strong> tab<br>
+          Copy your <strong>Client ID</strong> and <strong>Client Secret</strong><br>
+          <span style="color:var(--accent-orange)">⚠️ Keep the Client Secret safe — treat it like a password</span>
         </div>
 
-        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 4 — Install on Your Store</div>
-        <div style="margin-bottom:8px">
-          Go to the app's <strong>"Distribution"</strong> tab.<br>
-          Choose <strong>"Custom distribution"</strong> → select your store → <strong>"Install"</strong>.<br>
-          Approve the permissions when prompted.
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 5 — Install the App on Your Store</div>
+        <div style="margin-bottom:10px">
+          Go to the <strong>"Distribution"</strong> tab<br>
+          Select <strong>"Custom distribution"</strong> → choose your store → click <strong>"Install"</strong><br>
+          Approve the permissions when prompted
         </div>
 
-        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 5 — Paste credentials here</div>
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 6 — Paste & Connect</div>
         <div>
-          Paste the <strong>Client ID</strong> and <strong>Client Secret</strong> into the fields above, then click <strong>Test Connection</strong>. Ecom Rise will securely connect to your store! ✅
+          Paste the <strong>Client ID</strong> and <strong>Client Secret</strong> into the fields above<br>
+          Click <strong>Test Connection</strong> — done! ✅
         </div>
       </div>
     </div>
