@@ -1,17 +1,50 @@
 // Shopify Admin API Proxy — Netlify Function
-// Credentials: checks request headers first, then falls back to env vars
+// Supports new 2026 Client Credential Grant (client_id + client_secret → access_token)
+// Also supports direct access_token for legacy apps
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(), body: '' };
   }
 
-  // Get credentials: prefer request headers, fallback to env vars
+  // Get credentials from request headers (frontend sends them)
   const store = event.headers['x-shopify-store'] || process.env.SHOPIFY_STORE;
-  const token = event.headers['x-shopify-token'] || process.env.SHOPIFY_ACCESS_TOKEN;
+  let token = event.headers['x-shopify-token'] || process.env.SHOPIFY_ACCESS_TOKEN;
+  const clientId = event.headers['x-shopify-client-id'];
+  const clientSecret = event.headers['x-shopify-client-secret'];
 
-  if (!store || !token) {
-    return respond(401, { error: 'not_connected', message: 'Shopify not connected. Please add your store URL and access token.' });
+  if (!store) {
+    return respond(401, { error: 'not_connected', message: 'No store URL provided.' });
+  }
+
+  // If client_id + client_secret provided, exchange for access_token via Client Credential Grant
+  if (clientId && clientSecret && !token) {
+    try {
+      const tokenRes = await fetch(`https://${store}/admin/oauth/access_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          grant_type: 'client_credentials'
+        })
+      });
+      if (!tokenRes.ok) {
+        const errText = await tokenRes.text();
+        return respond(401, { error: 'auth_failed', message: 'Failed to get access token. Check your Client ID and Secret. ' + errText });
+      }
+      const tokenData = await tokenRes.json();
+      token = tokenData.access_token;
+      if (!token) {
+        return respond(401, { error: 'auth_failed', message: 'No access token returned by Shopify.' });
+      }
+    } catch (err) {
+      return respond(500, { error: 'auth_error', message: 'Token exchange failed: ' + err.message });
+    }
+  }
+
+  if (!token) {
+    return respond(401, { error: 'not_connected', message: 'No access token or Client ID/Secret provided.' });
   }
 
   const action = event.queryStringParameters?.action || 'orders';
@@ -24,7 +57,8 @@ exports.handler = async (event) => {
       case 'test': {
         const url = `${baseUrl}/shop.json`;
         const data = await shopifyFetch(url, token);
-        return respond(200, { connected: true, shop: data.shop?.name || store });
+        // Return the access token so frontend can cache it
+        return respond(200, { connected: true, shop: data.shop?.name || store, access_token: token });
       }
 
       // ─── ORDERS: recent orders with full details ───
@@ -166,7 +200,7 @@ exports.handler = async (event) => {
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Shopify-Store, X-Shopify-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Shopify-Store, X-Shopify-Token, X-Shopify-Client-Id, X-Shopify-Client-Secret',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Content-Type': 'application/json'
   };

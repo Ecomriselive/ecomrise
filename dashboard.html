@@ -991,56 +991,74 @@
     <div class="finance-input-group">
       <label>Store URL</label>
       <input type="text" id="shopify-store-input" placeholder="your-store.myshopify.com" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%">
-      <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Example: 2cdq2x-sz.myshopify.com</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Your .myshopify.com URL (e.g. my-store.myshopify.com)</div>
     </div>
     <div class="finance-input-group" style="margin-top:10px">
-      <label>Admin API Access Token</label>
-      <input type="password" id="shopify-token-input" placeholder="shpat_xxxxxxxxxxxxx" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%">
-      <div style="margin-top:6px">
-        <div onclick="document.getElementById('token-help').style.display = document.getElementById('token-help').style.display === 'none' ? 'block' : 'none'" style="font-size:11px;color:var(--accent-blue);cursor:pointer;display:flex;align-items:center;gap:4px">
-          <span>❓</span> <span style="text-decoration:underline">How do I get my access token?</span>
+      <label>Client ID</label>
+      <input type="text" id="shopify-clientid-input" placeholder="e.g. 44af619866ae58a3019b39e308ff1b15" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%">
+    </div>
+    <div class="finance-input-group" style="margin-top:10px">
+      <label>Client Secret</label>
+      <input type="password" id="shopify-secret-input" placeholder="Your app's Client Secret" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%">
+    </div>
+
+    <!-- Expandable guide -->
+    <div style="margin-top:10px">
+      <div onclick="document.getElementById('token-help').style.display = document.getElementById('token-help').style.display === 'none' ? 'block' : 'none'" style="font-size:11px;color:var(--accent-blue);cursor:pointer;display:flex;align-items:center;gap:4px">
+        <span>❓</span> <span style="text-decoration:underline">How do I get my Client ID & Secret?</span>
+      </div>
+      <div id="token-help" style="display:none;margin-top:8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;line-height:1.7;color:var(--text-secondary)">
+        <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px">🛍 Create an Ecom Rise app on Shopify</div>
+
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 1 — Go to the Shopify Developer Dashboard</div>
+        <div style="margin-bottom:8px">
+          Open <a href="https://partners.shopify.com" target="_blank" style="color:var(--accent-blue);text-decoration:underline">partners.shopify.com</a> and log in.<br>
+          Click <strong>"Apps"</strong> in the left sidebar → <strong>"Create app"</strong><br>
+          Choose <strong>"Create app manually"</strong>.
         </div>
-        <div id="token-help" style="display:none;margin-top:8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;line-height:1.7;color:var(--text-secondary)">
-          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px">🛍 Set up Ecom Rise on your Shopify store</div>
 
-          <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 1 — Enable Developer Apps</div>
-          <div style="margin-bottom:8px">
-            Go to your Shopify Admin → <strong>Settings</strong> → <strong>Apps and sales channels</strong> → <strong>Develop apps</strong><br>
-            If prompted, click <strong>"Allow custom app development"</strong> and confirm.
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 2 — Name and Configure the App</div>
+        <div style="margin-bottom:8px">
+          App name: <code style="background:var(--bg-card);padding:1px 6px;border-radius:4px;color:var(--accent-blue)">Ecom Rise</code><br>
+          Click <strong>"Create app"</strong>.<br>
+          Go to <strong>"Configuration"</strong> → under <strong>Admin API access scopes</strong>, add:<br>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 4px 8px">
+            <span class="pill blue" style="font-size:10px">read_orders</span>
+            <span class="pill blue" style="font-size:10px">read_products</span>
+            <span class="pill blue" style="font-size:10px">read_customers</span>
+            <span class="pill blue" style="font-size:10px">read_inventory</span>
           </div>
-
-          <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 2 — Create the App</div>
-          <div style="margin-bottom:8px">
-            Click <strong>"Create an app"</strong><br>
-            App name: <code style="background:var(--bg-card);padding:1px 6px;border-radius:4px;color:var(--accent-blue)">Ecom Rise</code><br>
-            Click <strong>"Create app"</strong>.
-          </div>
-
-          <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 3 — Set API Permissions</div>
-          <div style="margin-bottom:8px">
-            Click <strong>"Configure Admin API scopes"</strong><br>
-            Search and enable these scopes:<br>
-            <div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 4px 8px">
-              <span class="pill blue" style="font-size:10px">read_orders</span>
-              <span class="pill blue" style="font-size:10px">read_products</span>
-              <span class="pill blue" style="font-size:10px">read_customers</span>
-              <span class="pill blue" style="font-size:10px">read_inventory</span>
-            </div>
-            Click <strong>"Save"</strong>.
-          </div>
-
-          <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 4 — Install & Copy Token</div>
-          <div style="margin-bottom:8px">
-            Click <strong>"Install app"</strong> → confirm by clicking <strong>"Install"</strong><br>
-            You'll see your <strong>Admin API access token</strong> — it starts with <code style="background:var(--bg-card);padding:1px 6px;border-radius:4px;color:var(--accent-green)">shpat_</code><br>
-            <span style="color:var(--accent-orange)">⚠️ Copy it immediately — you can only see it once!</span>
-          </div>
-
-          <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 5 — Paste it here</div>
-          <div>
-            Paste the token into the <strong>"Admin API Access Token"</strong> field above and click <strong>Test Connection</strong>. That's it! ✅
-          </div>
+          Click <strong>"Save"</strong>.
         </div>
+
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 3 — Get your Client ID & Client Secret</div>
+        <div style="margin-bottom:8px">
+          Go to <strong>"API credentials"</strong> tab.<br>
+          Copy your <strong>Client ID</strong> and <strong>Client Secret</strong>.
+        </div>
+
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 4 — Install on Your Store</div>
+        <div style="margin-bottom:8px">
+          Go to the app's <strong>"Distribution"</strong> tab.<br>
+          Choose <strong>"Custom distribution"</strong> → select your store → <strong>"Install"</strong>.<br>
+          Approve the permissions when prompted.
+        </div>
+
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 5 — Paste credentials here</div>
+        <div>
+          Paste the <strong>Client ID</strong> and <strong>Client Secret</strong> into the fields above, then click <strong>Test Connection</strong>. Ecom Rise will securely connect to your store! ✅
+        </div>
+      </div>
+    </div>
+
+    <!-- Legacy token option (collapsed) -->
+    <div style="margin-top:8px">
+      <div onclick="document.getElementById('legacy-token-section').style.display = document.getElementById('legacy-token-section').style.display === 'none' ? 'block' : 'none'" style="font-size:10px;color:var(--text-muted);cursor:pointer">
+        ▸ I already have an Admin API access token (legacy app)
+      </div>
+      <div id="legacy-token-section" style="display:none;margin-top:6px">
+        <input type="password" id="shopify-token-input" placeholder="shpat_xxxxxxxxxxxxx" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%">
+        <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Paste your existing access token if you have one from a legacy custom app.</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:16px">
@@ -1229,17 +1247,23 @@ function openShopifyModal(storeId) {
   const statusEl = document.getElementById('shopify-modal-status');
   const connInfo = document.getElementById('shopify-connected-info');
 
+  // Reset fields
+  document.getElementById('shopify-store-input').value = '';
+  document.getElementById('shopify-clientid-input').value = '';
+  document.getElementById('shopify-secret-input').value = '';
+  const legacyEl = document.getElementById('shopify-token-input');
+  if (legacyEl) legacyEl.value = '';
+
   if (storeId === 'new') {
-    document.getElementById('shopify-store-input').value = '';
-    document.getElementById('shopify-token-input').value = '';
     connInfo.style.display = 'none';
-    statusEl.innerHTML = '<div style="background:rgba(56,139,253,0.1);border:1px solid rgba(56,139,253,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-blue)">Enter your Shopify store URL and Admin API access token to connect a new store.</div>';
+    statusEl.innerHTML = '<div style="background:rgba(56,139,253,0.1);border:1px solid rgba(56,139,253,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-blue)">Enter your Shopify store URL plus Client ID & Client Secret to connect a new store.</div>';
   } else {
     const stores = getStores();
     const store = stores.find(s => s.id === storeId);
     if (store) {
       document.getElementById('shopify-store-input').value = store.shopifyStore || '';
-      document.getElementById('shopify-token-input').value = store.shopifyToken || '';
+      document.getElementById('shopify-clientid-input').value = store.clientId || '';
+      document.getElementById('shopify-secret-input').value = store.clientSecret || '';
       if (store.shopifyStore && store.shopifyToken) {
         connInfo.style.display = 'block';
         document.getElementById('shopify-shop-name').textContent = '✓ Connected to ' + (store.name || store.shopifyStore);
@@ -1257,16 +1281,21 @@ function closeShopifyModal() {
   editingStoreId = null;
 }
 async function testShopifyConnection() {
-  const storeInput = document.getElementById('shopify-store-input');
-  const tokenInput = document.getElementById('shopify-token-input');
   const btn = document.getElementById('shopify-test-btn');
   const statusEl = document.getElementById('shopify-modal-status');
   
-  const store = storeInput.value.trim().replace('https://','').replace('http://','').replace(/\/$/,'');
-  const token = tokenInput.value.trim();
+  const store = document.getElementById('shopify-store-input').value.trim().replace('https://','').replace('http://','').replace(/\/$/,'');
+  const clientId = document.getElementById('shopify-clientid-input').value.trim();
+  const clientSecret = document.getElementById('shopify-secret-input').value.trim();
+  const legacyTokenEl = document.getElementById('shopify-token-input');
+  const legacyToken = legacyTokenEl ? legacyTokenEl.value.trim() : '';
 
-  if (!store || !token) {
-    statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Please enter both store URL and access token.</div>';
+  if (!store) {
+    statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Please enter your store URL.</div>';
+    return;
+  }
+  if (!clientId && !clientSecret && !legacyToken) {
+    statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Please enter your Client ID & Client Secret (or a legacy access token).</div>';
     return;
   }
 
@@ -1274,25 +1303,37 @@ async function testShopifyConnection() {
   btn.disabled = true;
 
   try {
-    const res = await fetch('/.netlify/functions/shopify?action=test', {
-      headers: { 'X-Shopify-Store': store, 'X-Shopify-Token': token }
-    });
+    // Build headers — send whichever credentials we have
+    const headers = { 'X-Shopify-Store': store };
+    if (legacyToken) {
+      headers['X-Shopify-Token'] = legacyToken;
+    } else {
+      headers['X-Shopify-Client-Id'] = clientId;
+      headers['X-Shopify-Client-Secret'] = clientSecret;
+    }
+
+    const res = await fetch('/.netlify/functions/shopify?action=test', { headers });
     const data = await res.json();
     
     if (data.connected) {
       const shopName = data.shop || store;
+      // The backend returns the access_token from the credential exchange
+      const resolvedToken = data.access_token || legacyToken;
 
       if (editingStoreId === 'new') {
-        // Add new store
-        const newStore = addStore({ name: shopName, shopifyStore: store, shopifyToken: token, metaToken: '' });
+        const newStore = addStore({
+          name: shopName, shopifyStore: store, shopifyToken: resolvedToken,
+          clientId: clientId, clientSecret: clientSecret, metaToken: ''
+        });
         setActiveStore(newStore.id);
       } else {
-        // Update existing store
         const stores = getStores();
         const idx = stores.findIndex(s => s.id === editingStoreId);
         if (idx >= 0) {
           stores[idx].shopifyStore = store;
-          stores[idx].shopifyToken = token;
+          stores[idx].shopifyToken = resolvedToken;
+          stores[idx].clientId = clientId;
+          stores[idx].clientSecret = clientSecret;
           stores[idx].name = shopName;
           saveStores(stores);
         }
@@ -1304,6 +1345,7 @@ async function testShopifyConnection() {
       statusEl.innerHTML = '<div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-green)">✅ Connected successfully! Your live data will load now.</div>';
       
       updateShopifyBadge();
+      updateTopbarStoreName();
       ShopifyAPI.clearCache();
       loadShopifyData(true);
       renderAccountsPage();
