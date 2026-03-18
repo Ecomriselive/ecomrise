@@ -414,6 +414,7 @@
     </div>
 
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px">
+      <button class="btn btn-secondary btn-sm refresh-shopify-btn" onclick="refreshShopifyData()">↻ Refresh</button>
       <button class="btn btn-secondary btn-sm">✏️ Edit Layout</button>
       <button class="btn btn-primary btn-sm">⊞ Widgets</button>
     </div>
@@ -484,7 +485,7 @@
   <div id="page-shopify" class="page" style="display:none">
     <div class="page-header-row">
       <div><div class="page-title">Shopify Analytics</div><div class="page-subtitle">Live store data · 2026-02-16 → 2026-03-18</div></div>
-      <button class="btn btn-secondary btn-sm">↻ Refresh</button>
+      <button class="btn btn-secondary btn-sm refresh-shopify-btn" onclick="refreshShopifyData()">↻ Refresh</button>
     </div>
     <div class="shopify-metric-cards">
       <div class="smc blue"><div class="smc-label">Total Revenue</div><div class="smc-value">€11,047.54</div><div class="smc-change positive">↑ 495.6%</div></div>
@@ -989,6 +990,51 @@
 </div>
 
 <script>
+// ===== SHOPIFY API MODULE =====
+const ShopifyAPI = {
+  cache: {},
+  cacheExpiry: 5 * 60 * 1000, // 5 min cache
+
+  async fetch(action, params = {}) {
+    const cacheKey = action + JSON.stringify(params);
+    const cached = this.cache[cacheKey];
+    if (cached && Date.now() - cached.time < this.cacheExpiry) return cached.data;
+
+    const qs = new URLSearchParams({ action, ...params }).toString();
+    try {
+      const res = await fetch(`/.netlify/functions/shopify?${qs}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      this.cache[cacheKey] = { data, time: Date.now() };
+      return data;
+    } catch (err) {
+      console.error('ShopifyAPI error:', err);
+      return null;
+    }
+  },
+
+  clearCache() { this.cache = {}; },
+
+  async getStats(since, until) {
+    const params = {};
+    if (since) params.since = since;
+    if (until) params.until = until;
+    return this.fetch('stats', params);
+  },
+
+  async getOrders(limit = 50, since) {
+    const params = { limit };
+    if (since) params.since = since;
+    return this.fetch('orders', params);
+  }
+};
+
+// ===== LIVE DATA STATE =====
+let liveShopifyStats = null;
+let liveShopifyOrders = null;
+let shopifyDataLoaded = false;
+
 // ===== PAGE NAVIGATION =====
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
@@ -998,10 +1044,332 @@ function showPage(id) {
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + id + "'")) n.classList.add('active');
   });
-  // Close panels
   document.getElementById('appsPanel').classList.remove('open');
   document.getElementById('datePanel').classList.remove('open');
   document.getElementById('currencyPanel').style.display = 'none';
+
+  // Load live data for relevant pages
+  if (id === 'home' || id === 'shopify') loadShopifyData();
+}
+
+// ===== LOAD LIVE SHOPIFY DATA =====
+async function loadShopifyData(forceRefresh = false) {
+  if (forceRefresh) ShopifyAPI.clearCache();
+  
+  try {
+    const [stats, ordersData] = await Promise.all([
+      ShopifyAPI.getStats(),
+      ShopifyAPI.getOrders(50)
+    ]);
+
+    if (stats) {
+      liveShopifyStats = stats;
+      renderHomeKPIs(stats);
+      renderShopifyPage(stats);
+      shopifyDataLoaded = true;
+    }
+    if (ordersData) {
+      liveShopifyOrders = ordersData.orders;
+      renderShopifyOrders(ordersData.orders);
+    }
+  } catch (err) {
+    console.error('Failed to load Shopify data:', err);
+  }
+}
+
+// ===== REFRESH BUTTON HANDLER =====
+async function refreshShopifyData() {
+  const btns = document.querySelectorAll('.refresh-shopify-btn');
+  btns.forEach(b => { b.textContent = '⏳ Loading...'; b.disabled = true; });
+  await loadShopifyData(true);
+  btns.forEach(b => { b.textContent = '↻ Refresh'; b.disabled = false; });
+}
+
+// ===== FORMAT HELPERS =====
+function fmt(n, decimals = 2) {
+  return '€' + Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+function fmtPct(n) { return Number(n || 0).toFixed(1) + '%'; }
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+}
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ') : ''; }
+
+// ===== RENDER HOME PAGE KPIs =====
+function renderHomeKPIs(stats) {
+  const homeKPIs = document.querySelector('#page-home .kpi-grid');
+  if (!homeKPIs) return;
+  
+  // Update the greeting date
+  const greetingSub = document.querySelector('#page-home .greeting-sub');
+  if (greetingSub) {
+    const now = new Date();
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const hour = now.getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    document.querySelector('#page-home .greeting-title').textContent = `${greeting}, Lloyd 👋`;
+    greetingSub.innerHTML = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} — <span style="color:var(--text-muted)">Live data • Last sync just now</span>`;
+  }
+
+  // Update connection badges
+  const connBadges = document.querySelector('#page-home .conn-badges');
+  if (connBadges) {
+    const shopifyBadge = connBadges.querySelector('.pill.blue');
+    if (shopifyBadge) shopifyBadge.innerHTML = '✓ Shopify live';
+  }
+
+  // Update KPI values — find KPI cards by their label text
+  const kpiCards = document.querySelectorAll('#page-home .kpi-grid .kpi-card');
+  kpiCards.forEach(card => {
+    const label = card.querySelector('.kpi-label')?.textContent?.trim();
+    const valueEl = card.querySelector('.kpi-value');
+    const changeEl = card.querySelector('.kpi-change');
+    const noteEl = card.querySelector('.kpi-note');
+
+    switch (label) {
+      case 'Revenue':
+        if (valueEl) valueEl.textContent = fmt(stats.totalRevenue);
+        if (changeEl) { changeEl.className = 'kpi-change ' + (stats.totalRevenue > 0 ? 'up' : 'neutral'); changeEl.textContent = stats.totalRevenue > 0 ? '↑ Live data' : '—'; }
+        if (noteEl) noteEl.textContent = `${stats.totalOrders} orders`;
+        break;
+      case 'Orders':
+        if (valueEl) valueEl.textContent = stats.totalOrders;
+        if (changeEl) { changeEl.className = 'kpi-change ' + (stats.totalOrders > 0 ? 'up' : 'neutral'); changeEl.textContent = stats.totalOrders > 0 ? '↑ Live' : '—'; }
+        if (noteEl) noteEl.textContent = `AOV ${fmt(stats.aov)}`;
+        break;
+      case 'Avg Order Value':
+        if (valueEl) valueEl.textContent = fmt(stats.aov);
+        break;
+      case 'Refund Rate':
+        if (valueEl) valueEl.textContent = fmtPct(stats.refundRate);
+        if (changeEl) changeEl.textContent = `${stats.refundCount} refunds`;
+        break;
+      case 'Fulfillment Rate':
+        if (valueEl) valueEl.textContent = fmtPct(stats.fulfillmentRate);
+        break;
+    }
+  });
+
+  // Update Home Spend vs Revenue chart with live daily data
+  if (stats.dailyData && stats.dailyData.length > 0) {
+    setTimeout(() => {
+      const labels = stats.dailyData.map(d => {
+        const dt = new Date(d.date);
+        return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      });
+      const revData = stats.dailyData.map(d => d.revenue);
+      mkChart('homeChart', 'line', {
+        labels,
+        datasets: [
+          { label: 'Revenue', data: revData, borderColor: '#3fb950', backgroundColor: '#3fb95022', tension: 0.4, fill: true, pointRadius: 3 }
+        ]
+      });
+    }, 100);
+  }
+}
+
+// ===== RENDER SHOPIFY ANALYTICS PAGE =====
+function renderShopifyPage(stats) {
+  // Update date subtitle
+  const subtitle = document.querySelector('#page-shopify .page-subtitle');
+  if (subtitle && stats.dateRange) {
+    subtitle.textContent = `Live store data · ${stats.dateRange.since} → ${stats.dateRange.until}`;
+  }
+
+  // Update Shopify metric cards
+  const smcCards = document.querySelectorAll('#page-shopify .smc');
+  smcCards.forEach(card => {
+    const label = card.querySelector('.smc-label')?.textContent?.trim();
+    const valueEl = card.querySelector('.smc-value');
+    const changeEl = card.querySelector('.smc-change');
+
+    switch (label) {
+      case 'Total Revenue':
+        if (valueEl) valueEl.textContent = fmt(stats.totalRevenue);
+        if (changeEl) changeEl.textContent = `${stats.totalOrders} orders this period`;
+        break;
+      case 'Total Orders':
+        if (valueEl) valueEl.textContent = stats.totalOrders;
+        if (changeEl) changeEl.textContent = `Live from Shopify`;
+        break;
+      case 'Avg Order Value':
+        if (valueEl) valueEl.textContent = fmt(stats.aov);
+        if (changeEl) changeEl.textContent = 'Per order average';
+        break;
+      case 'Refund Rate':
+        if (valueEl) valueEl.textContent = fmtPct(stats.refundRate);
+        if (changeEl) changeEl.textContent = `${stats.refundCount} refunds · Target 3%`;
+        break;
+      case 'Fulfillment Rate':
+        if (valueEl) valueEl.textContent = fmtPct(stats.fulfillmentRate);
+        if (changeEl) changeEl.textContent = `${stats.fulfilledCount} fulfilled / ${stats.totalOrders} total`;
+        break;
+      case 'Cancelled':
+        if (valueEl) valueEl.textContent = stats.cancelledCount || 0;
+        if (changeEl) changeEl.textContent = `${stats.unfulfilledCount || 0} unfulfilled`;
+        break;
+    }
+  });
+
+  // Update conversion funnel cards
+  const convCards = document.querySelectorAll('#page-shopify .conv-card');
+  convCards.forEach(card => {
+    const label = card.querySelector('.conv-label')?.textContent?.trim();
+    const valueEl = card.querySelector('.conv-value');
+    const pctEl = card.querySelector('.conv-pct');
+
+    switch (label) {
+      case 'Reached Checkout':
+        if (valueEl) valueEl.textContent = stats.reachedCheckout || stats.totalOrders;
+        if (pctEl) pctEl.textContent = '100.0%';
+        break;
+      case 'Completed Purchase':
+        if (valueEl) valueEl.textContent = stats.completedPurchase || stats.totalOrders;
+        if (pctEl) pctEl.textContent = fmtPct(stats.checkoutConversion);
+        break;
+      case 'Abandoned Checkout':
+        if (valueEl) valueEl.textContent = stats.abandoned || 0;
+        if (pctEl) pctEl.textContent = fmtPct(100 - (stats.checkoutConversion || 0));
+        break;
+      case 'Checkout → Purchase':
+        if (valueEl) valueEl.textContent = fmtPct(stats.checkoutConversion);
+        if (pctEl) pctEl.innerHTML = (stats.checkoutConversion || 0) > 50 ? '<span style="color:var(--accent-green)">✓ Strong</span>' : '<span style="color:var(--accent-orange)">⚠ Needs work</span>';
+        break;
+    }
+  });
+
+  // Update customers section
+  const custBars = document.querySelectorAll('#page-shopify .cust-bar');
+  if (custBars.length >= 2) {
+    // New customers
+    const newPct = stats.totalCustomers > 0 ? (stats.newCustomers / stats.totalCustomers * 100) : 100;
+    const fill1 = custBars[0].querySelector('.cust-bar-fill');
+    const pct1 = custBars[0].querySelector('.cust-bar-pct');
+    if (fill1) fill1.style.width = newPct + '%';
+    if (pct1) pct1.textContent = `${stats.newCustomers || 0} (${fmtPct(newPct)})`;
+
+    // Returning customers
+    const retPct = stats.totalCustomers > 0 ? (stats.returningCustomers / stats.totalCustomers * 100) : 0;
+    const fill2 = custBars[1].querySelector('.cust-bar-fill');
+    const pct2 = custBars[1].querySelector('.cust-bar-pct');
+    if (fill2) fill2.style.width = retPct + '%';
+    if (pct2) pct2.textContent = `${stats.returningCustomers || 0} (${fmtPct(retPct)})`;
+  }
+
+  // Update top products table
+  if (stats.topProducts && stats.topProducts.length > 0) {
+    const prodTbody = document.querySelector('#page-shopify .data-table tbody');
+    // Find the right table — the one after "Top Products Table" header
+    const prodTables = document.querySelectorAll('#page-shopify table.data-table');
+    prodTables.forEach(table => {
+      const header = table.previousElementSibling || table.closest('.section-card')?.querySelector('.section-title');
+      if (header && (header.textContent || '').includes('Top Products')) {
+        const tb = table.querySelector('tbody');
+        if (tb) {
+          tb.innerHTML = stats.topProducts.map(p =>
+            `<tr><td>${p.title.length > 30 ? p.title.substring(0, 30) + '...' : p.title}</td><td>${p.units}</td><td class="positive">${fmt(p.revenue)}</td></tr>`
+          ).join('');
+        }
+      }
+    });
+  }
+
+  // Update Order Status Breakdown (Payment + Fulfillment)
+  // Payment status bars
+  const paymentSection = document.querySelector('#page-shopify');
+  if (paymentSection && stats.totalOrders > 0) {
+    const paidPct = (stats.paidCount / stats.totalOrders * 100);
+    const partRefPct = (stats.partialRefundCount / stats.totalOrders * 100);
+    const refPct = (stats.refundCount / stats.totalOrders * 100);
+    const fulPct = (stats.fulfilledCount / stats.totalOrders * 100);
+    const unfulPct = (stats.unfulfilledCount / stats.totalOrders * 100);
+
+    // Find the order status section bars
+    const statusBars = document.querySelectorAll('#page-shopify .section-card:last-of-type .cust-bar');
+    if (statusBars.length >= 5) {
+      // Paid
+      statusBars[0].querySelector('.cust-bar-fill').style.width = paidPct + '%';
+      statusBars[0].querySelector('.cust-bar-pct').textContent = `${stats.paidCount} (${fmtPct(paidPct)})`;
+      // Partially refunded
+      statusBars[1].querySelector('.cust-bar-fill').style.width = partRefPct + '%';
+      statusBars[1].querySelector('.cust-bar-pct').textContent = `${stats.partialRefundCount} (${fmtPct(partRefPct)})`;
+      // Refunded
+      statusBars[2].querySelector('.cust-bar-fill').style.width = refPct + '%';
+      statusBars[2].querySelector('.cust-bar-pct').textContent = `${stats.refundCount} (${fmtPct(refPct)})`;
+      // Fulfilled
+      statusBars[3].querySelector('.cust-bar-fill').style.width = fulPct + '%';
+      statusBars[3].querySelector('.cust-bar-pct').textContent = `${stats.fulfilledCount} (${fmtPct(fulPct)})`;
+      // Unfulfilled
+      statusBars[4].querySelector('.cust-bar-fill').style.width = unfulPct + '%';
+      statusBars[4].querySelector('.cust-bar-pct').textContent = `${stats.unfulfilledCount} (${fmtPct(unfulPct)})`;
+    }
+  }
+
+  // Update Shopify charts with live data
+  if (stats.dailyData && stats.dailyData.length > 0) {
+    setTimeout(() => {
+      const labels = stats.dailyData.map(d => {
+        const dt = new Date(d.date);
+        return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      });
+      const revData = stats.dailyData.map(d => d.revenue);
+      const orderData = stats.dailyData.map(d => d.orders);
+
+      mkChart('shopifyRevChart', 'line', {
+        labels, datasets: [{ label: 'Revenue', data: revData, borderColor: '#3fb950', backgroundColor: '#3fb95018', tension: 0.3, fill: true, pointRadius: revData.length > 20 ? 0 : 3 }]
+      });
+      mkChart('shopifyOrdersChart', 'bar', {
+        labels, datasets: [{ label: 'Orders', data: orderData, backgroundColor: '#388bfd88', borderColor: '#388bfd', borderWidth: 1 }]
+      });
+    }, 100);
+  }
+
+  // Update top products chart
+  if (stats.topProducts && stats.topProducts.length > 0) {
+    setTimeout(() => {
+      const colors = ['#388bfd','#a371f7','#3fb950','#d29922','#f85149','#39d353','#58a6ff','#f0883e','#bc8cff','#56d364'];
+      mkChart('topProductsChart', 'bar', {
+        labels: stats.topProducts.map(p => p.title.length > 20 ? p.title.substring(0, 20) + '...' : p.title),
+        datasets: [{ label: 'Revenue', data: stats.topProducts.map(p => p.revenue), backgroundColor: colors.slice(0, stats.topProducts.length), borderWidth: 0 }]
+      }, { indexAxis: 'y' });
+    }, 150);
+  }
+
+  // Update sales by country chart
+  if (stats.topCountries && stats.topCountries.length > 0) {
+    setTimeout(() => {
+      const colors = ['#388bfd','#3fb950','#f85149','#d29922','#a371f7','#39d353','#58a6ff'];
+      mkChart('salesCountryChart', 'bar', {
+        labels: stats.topCountries.map(c => c.country),
+        datasets: [{ label: 'Revenue', data: stats.topCountries.map(c => c.revenue), backgroundColor: colors.slice(0, stats.topCountries.length), borderWidth: 0 }]
+      }, { indexAxis: 'y' });
+    }, 200);
+  }
+}
+
+// ===== RENDER SHOPIFY ORDERS TABLE =====
+function renderShopifyOrders(orders) {
+  const tbody = document.getElementById('shopify-orders-tbody');
+  if (!tbody || !orders || orders.length === 0) return;
+
+  tbody.innerHTML = orders.map(o => {
+    const paymentPill = o.financial_status === 'paid' ? 'green' :
+                        o.financial_status === 'refunded' ? 'red' :
+                        o.financial_status === 'partially_refunded' ? 'orange' : 'gray';
+    const fulfillPill = o.fulfillment_status === 'fulfilled' ? 'green' :
+                        o.fulfillment_status === 'unfulfilled' ? 'orange' : 'orange';
+    return `<tr>
+      <td class="td-link">${o.name}</td>
+      <td>${o.customer || 'Guest'}</td>
+      <td>${fmt(o.total)}</td>
+      <td><span class="pill ${paymentPill}">${capitalize(o.financial_status)}</span></td>
+      <td><span class="pill ${fulfillPill}">${capitalize(o.fulfillment_status)}</span></td>
+      <td style="color:var(--text-muted)">${fmtDate(o.created_at)}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ===== PANELS =====
@@ -1032,24 +1400,6 @@ function toggleAdSet(el) {
   }
 }
 
-// ===== SHOPIFY ORDERS =====
-const orders = [
-  ['#1177','Astrid Nuccum','€39.95','Paid','Unfulfilled','17 Mar 26'],
-  ['#1176','Ivana Simic','€514.05','Paid','Unfulfilled','17 Mar 26'],
-  ['#1175','Eleonore Zimhut','€63.92','Paid','Unfulfilled','17 Mar 26'],
-  ['#1174','hilary eberhardt','€39.95','Paid','Unfulfilled','17 Mar 26'],
-  ['#1173','Inge Latner','€39.95','Paid','Unfulfilled','17 Mar 26'],
-  ['#1172','Krisztina Szabo','€98.00','Paid','Unfulfilled','17 Mar 26'],
-  ['#1171','Barbara Petrich','€35.90','Paid','Unfulfilled','16 Mar 26'],
-  ['#1170','Sabrina Winter','€59.95','Paid','Unfulfilled','16 Mar 26'],
-  ['#1169','Jadranke Jovic','€44.95','Paid','Unfulfilled','16 Mar 26'],
-  ['#1168','Ingrid Hintersdorner','€44.95','Paid','Unfulfilled','16 Mar 26'],
-];
-const tbody = document.getElementById('shopify-orders-tbody');
-if (tbody) orders.forEach(o => {
-  tbody.innerHTML += `<tr><td class="td-link">${o[0]}</td><td>${o[1]}</td><td>${o[2]}</td><td><span class="pill green">${o[3]}</span></td><td><span class="pill orange">${o[4]}</span></td><td style="color:var(--text-muted)">${o[5]}</td></tr>`;
-});
-
 // ===== CHARTS =====
 const chartInstances = {};
 function mkChart(id, type, data, options={}) {
@@ -1068,28 +1418,8 @@ function mkChart(id, type, data, options={}) {
 }
 
 function initChartsForPage(id) {
-  if (id === 'home') {
-    setTimeout(() => {
-      mkChart('homeChart', 'line', {
-        labels: ['Mar 10','Mar 11','Mar 12','Mar 13','Mar 14','Mar 15','Mar 16','Mar 17','Mar 18'],
-        datasets: [
-          { label:'Spend', data:[0,0,0,0,1.46,1.84,2.62,3.22,4.03], borderColor:'#388bfd', backgroundColor:'#388bfd22', tension:0.4, fill:true, pointRadius:3 },
-          { label:'Revenue', data:[0,0,0,0,0,717.87,717.87,717.87,717.87], borderColor:'#3fb950', backgroundColor:'#3fb95022', tension:0.4, fill:true, pointRadius:3 }
-        ]
-      });
-    }, 50);
-  }
-  if (id === 'shopify') {
-    setTimeout(() => {
-      const labels = Array.from({length:30},(_,i)=>`${i+16} Feb`).concat(['Mar 1','Mar 5','Mar 10','Mar 15','Mar 17']);
-      const rev = labels.map(()=>Math.random()*800+100);
-      mkChart('shopifyRevChart','line',{ labels, datasets:[{ label:'Revenue', data:rev, borderColor:'#3fb950', backgroundColor:'#3fb95018', tension:0.3, fill:true, pointRadius:0 }] });
-      const orders2 = labels.map(()=>Math.floor(Math.random()*15+1));
-      mkChart('shopifyOrdersChart','bar',{ labels, datasets:[{ label:'Orders', data:orders2, backgroundColor:'#388bfd88', borderColor:'#388bfd', borderWidth:1 }] });
-      mkChart('topProductsChart','bar',{ labels:['Stella','Samuel','Lara','KRAF','Davin','Emil','Alba'], datasets:[{ label:'Revenue', data:[5244,1588,699,420,390,390,370], backgroundColor:['#388bfd','#a371f7','#3fb950','#d29922','#f85149','#39d353','#58a6ff'], borderWidth:0 }] },{ indexAxis:'y' });
-      mkChart('salesCountryChart','bar',{ labels:['Austria','Slovakia','Norway'], datasets:[{ label:'Sales', data:[9800,620,380], backgroundColor:['#388bfd','#3fb950','#f85149'], borderWidth:0 }] },{ indexAxis:'y' });
-    }, 50);
-  }
+  // Home and Shopify charts are now rendered by live data functions
+  // Only render static charts for pages not yet connected to live data
   if (id === 'campaigns') {
     setTimeout(() => {
       const camps = ['LARA SANDALS','MARY-JANE','DAMEN SANDALEN','ROYALE COLL','WOMAN SHOE'];
@@ -1115,6 +1445,16 @@ async function sendAiMessage() {
   input.value = '';
   appendAiMsg(msg, 'user');
   const thinking = appendAiMsg('Thinking...', 'bot');
+
+  // Build context from live data
+  let context = 'You are GoyBot, an AI assistant for Ecom Rise. Be concise, data-driven, actionable.';
+  if (liveShopifyStats) {
+    context += ` Live Shopify data: ${liveShopifyStats.totalOrders} orders, ${fmt(liveShopifyStats.totalRevenue)} revenue, AOV ${fmt(liveShopifyStats.aov)}, ${fmtPct(liveShopifyStats.refundRate)} refund rate, ${fmtPct(liveShopifyStats.fulfillmentRate)} fulfilled.`;
+    if (liveShopifyStats.topProducts?.length > 0) {
+      context += ` Top products: ${liveShopifyStats.topProducts.slice(0,3).map(p => `${p.title} (${fmt(p.revenue)})`).join(', ')}.`;
+    }
+  }
+
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -1122,7 +1462,7 @@ async function sendAiMessage() {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        system: 'You are GoyBot, an AI assistant for an ecommerce operations dashboard called Ecom Rise. You help users analyse their Meta Ads campaigns, Shopify store data, ROAS, and overall ad performance. Be concise, data-driven, and actionable. Current data: Total spend €4.03, Revenue €0.00 today, ROAS 0.00, Shopify 171 orders this month, €11,047.54 revenue this month. Best campaign this month: ROYALE COLL at 4.58x ROAS.',
+        system: context,
         messages: [{ role: 'user', content: msg }]
       })
     });
