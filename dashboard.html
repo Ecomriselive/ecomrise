@@ -393,12 +393,10 @@
   <!-- ===== HOME PAGE ===== -->
   <div id="page-home" class="page">
     <div class="greeting-row">
-      <div class="greeting-title">Hello Lloyd 👋</div>
-      <div class="greeting-sub" id="home-store-line" style="display:flex;align-items:center;gap:6px">
-        Store — <span id="home-store-code" style="color:var(--accent-blue);font-weight:600">No store selected</span>
-        <span onclick="renameActiveStore()" style="cursor:pointer;font-size:12px;opacity:0.6" title="Rename store">✏️</span>
+      <div class="greeting-title" style="display:flex;align-items:baseline;gap:10px">
+        Hello Lloyd 👋
+        <span style="font-size:14px;font-weight:500;color:var(--text-muted)">Store — <span id="home-store-code" style="color:var(--accent-blue);font-weight:600">No store selected</span> <span onclick="renameActiveStore()" style="cursor:pointer;font-size:12px;opacity:0.6" title="Rename store">✏️</span></span>
       </div>
-      <div class="greeting-sub" style="margin-top:2px"></div>
       <div class="conn-badges" style="margin-top:8px" id="home-conn-badges">
         <span class="pill gray">✗ Meta Ads</span>
         <span class="pill gray" id="home-shopify-badge">✗ Shopify not connected</span>
