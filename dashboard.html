@@ -1088,6 +1088,94 @@
   </div>
 </div>
 
+<!-- ===== META ADS CONNECT MODAL ===== -->
+<div id="metaModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:9999;justify-content:center;align-items:center">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;max-width:440px;width:90%;max-height:85vh;overflow-y:auto;position:relative">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700">📊 Connect Meta Ads</div>
+      <button class="modal-close" onclick="closeMetaModal()">✕</button>
+    </div>
+
+    <div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.2);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--accent-green);margin-bottom:12px">
+      🔒 <strong>Read-only access</strong> — Ecom Rise can only VIEW your ad data. It cannot create, edit, pause, or delete anything on your ad account.
+    </div>
+
+    <div id="meta-modal-status" style="margin-bottom:12px"></div>
+
+    <div class="finance-input-group">
+      <label>Meta Access Token</label>
+      <input type="password" id="meta-token-input" placeholder="Paste your Meta access token" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%">
+    </div>
+
+    <div id="meta-account-picker" style="display:none;margin-top:10px">
+      <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block">Select Ad Account</label>
+      <select id="meta-account-select" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%"></select>
+    </div>
+
+    <!-- Guide -->
+    <div style="margin-top:10px">
+      <div onclick="document.getElementById('meta-help').style.display = document.getElementById('meta-help').style.display === 'none' ? 'block' : 'none'" style="font-size:11px;color:var(--accent-blue);cursor:pointer;display:flex;align-items:center;gap:4px">
+        <span>❓</span> <span style="text-decoration:underline">How do I get my Meta access token?</span>
+      </div>
+      <div id="meta-help" style="display:none;margin-top:8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;line-height:1.7;color:var(--text-secondary);max-height:300px;overflow-y:auto">
+        <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px">📊 Get a Meta Ads read-only token</div>
+
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 1 — Go to Graph API Explorer</div>
+        <div style="margin-bottom:10px">
+          Open <a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color:var(--accent-blue);text-decoration:underline">developers.facebook.com/tools/explorer</a><br>
+          Log in with the Facebook account linked to your ad account.
+        </div>
+
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 2 — Select your App</div>
+        <div style="margin-bottom:10px">
+          In the <strong>"Meta App"</strong> dropdown, select your app<br>
+          <span style="color:var(--text-muted);font-size:11px">(If you don't have one, click "Create App" at <a href="https://developers.facebook.com/apps/" target="_blank" style="color:var(--accent-blue)">developers.facebook.com/apps</a>)</span>
+        </div>
+
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 3 — Add read-only permissions</div>
+        <div style="margin-bottom:10px">
+          Click <strong>"Add a Permission"</strong> and select:<br>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 4px 8px">
+            <span class="pill blue" style="font-size:10px">ads_read</span>
+            <span class="pill blue" style="font-size:10px">read_insights</span>
+          </div>
+          <span style="color:var(--accent-orange)">⚠️ Do NOT add ads_management or any write permissions</span>
+        </div>
+
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 4 — Generate & copy token</div>
+        <div style="margin-bottom:10px">
+          Click <strong>"Generate Access Token"</strong><br>
+          Approve the permissions popup<br>
+          Copy the token and paste it above
+        </div>
+
+        <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 5 — Extend the token (recommended)</div>
+        <div>
+          Go to <a href="https://developers.facebook.com/tools/debug/accesstoken/" target="_blank" style="color:var(--accent-blue);text-decoration:underline">Access Token Debugger</a><br>
+          Paste your token → click <strong>"Extend Access Token"</strong><br>
+          This gives you a 60-day token instead of 1 hour
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" onclick="testMetaConnection()" id="meta-test-btn" style="flex:1;justify-content:center">🔗 Test Connection</button>
+      <button class="btn btn-secondary" onclick="closeMetaModal()">Cancel</button>
+    </div>
+
+    <div id="meta-connected-info" style="margin-top:12px;display:none">
+      <div style="background:#1a3a1a;border:1px solid #2ea04326;border-radius:6px;padding:10px;display:flex;align-items:center;gap:8px">
+        <span style="color:var(--accent-green);font-size:16px">✓</span>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--accent-green)" id="meta-user-name">Connected</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="meta-account-name"></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="disconnectMeta()" style="margin-left:auto;color:var(--accent-red)">Disconnect</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ===== MULTI-STORE MANAGEMENT =====
 function getStores() {
@@ -1241,7 +1329,7 @@ function renderAccountsPage() {
             <div style="font-size:12px;font-weight:600">📊 Meta Ads</div>
             <div style="font-size:11px;color:${metaOk ? 'var(--accent-green)' : 'var(--text-muted)'}">${metaOk ? '● Connected' : '○ Not connected'}</div>
           </div>
-          <button class="btn ${metaOk ? 'btn-secondary' : 'btn-primary'} btn-sm" onclick="event.stopPropagation();alert('Meta Ads connection coming soon!')">${metaOk ? 'Manage' : 'Connect'}</button>
+          <button class="btn ${metaOk ? 'btn-secondary' : 'btn-primary'} btn-sm" onclick="event.stopPropagation();openMetaModal('${s.id}')">${metaOk ? 'Manage' : 'Connect'}</button>
         </div>
       </div>
 
@@ -1413,6 +1501,139 @@ function updateShopifyBadge() {
   } else {
     badge.className = 'pill gray';
     badge.textContent = '✗ Shopify not connected';
+  }
+}
+
+// ===== META ADS CONNECTION =====
+let metaEditingStoreId = null;
+
+function isMetaConnected() {
+  const s = getActiveStore();
+  return s && s.metaToken && s.metaAccountId;
+}
+
+function openMetaModal(storeId) {
+  metaEditingStoreId = storeId || (getActiveStore()?.id);
+  const modal = document.getElementById('metaModal');
+  modal.style.display = 'flex';
+  document.getElementById('meta-token-input').value = '';
+  document.getElementById('meta-account-picker').style.display = 'none';
+  document.getElementById('meta-connected-info').style.display = 'none';
+  document.getElementById('meta-modal-status').innerHTML = '';
+
+  // Check if already connected
+  const stores = getStores();
+  const store = stores.find(s => s.id === metaEditingStoreId);
+  if (store && store.metaToken && store.metaAccountId) {
+    document.getElementById('meta-connected-info').style.display = 'block';
+    document.getElementById('meta-user-name').textContent = '✓ Connected — ' + (store.metaAccountName || store.metaAccountId);
+    document.getElementById('meta-account-name').textContent = 'Ad Account: ' + store.metaAccountId;
+  }
+}
+
+function closeMetaModal() {
+  document.getElementById('metaModal').style.display = 'none';
+  metaEditingStoreId = null;
+}
+
+async function testMetaConnection() {
+  const btn = document.getElementById('meta-test-btn');
+  const statusEl = document.getElementById('meta-modal-status');
+  const token = document.getElementById('meta-token-input').value.trim();
+
+  if (!token) {
+    statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Please paste your Meta access token.</div>';
+    return;
+  }
+
+  btn.textContent = '⏳ Testing...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/.netlify/functions/meta?action=test', {
+      headers: { 'X-Meta-Token': token }
+    });
+    const data = await res.json();
+
+    if (data.connected && data.adAccounts && data.adAccounts.length > 0) {
+      // Show account picker
+      const select = document.getElementById('meta-account-select');
+      select.innerHTML = data.adAccounts.map(a =>
+        `<option value="${a.id}" data-name="${a.name}">${a.name} (${a.account_id}) — ${a.currency}</option>`
+      ).join('');
+      document.getElementById('meta-account-picker').style.display = 'block';
+
+      // Auto-save with first account
+      const selectedAcct = data.adAccounts[0];
+      saveMetaCredentials(token, selectedAcct.id, selectedAcct.name);
+
+      // Listen for account change
+      select.onchange = function() {
+        const opt = select.options[select.selectedIndex];
+        saveMetaCredentials(token, opt.value, opt.dataset.name);
+      };
+
+      document.getElementById('meta-user-name').textContent = '✓ Connected as ' + data.user;
+      document.getElementById('meta-account-name').textContent = 'Ad Account: ' + selectedAcct.name;
+      document.getElementById('meta-connected-info').style.display = 'block';
+      statusEl.innerHTML = '<div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-green)">✅ Meta Ads connected! Read-only access confirmed.</div>';
+
+      updateMetaBadge();
+      renderAccountsPage();
+
+      setTimeout(() => closeMetaModal(), 2500);
+    } else if (data.connected) {
+      statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Token works but no ad accounts found. Make sure you have access to an ad account.</div>';
+    } else {
+      statusEl.innerHTML = `<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ ${data.message || 'Connection failed.'}</div>`;
+    }
+  } catch (err) {
+    statusEl.innerHTML = `<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Error: ${err.message}</div>`;
+  }
+
+  btn.textContent = '🔗 Test Connection';
+  btn.disabled = false;
+}
+
+function saveMetaCredentials(token, accountId, accountName) {
+  const stores = getStores();
+  const idx = stores.findIndex(s => s.id === metaEditingStoreId);
+  if (idx >= 0) {
+    stores[idx].metaToken = token;
+    stores[idx].metaAccountId = accountId;
+    stores[idx].metaAccountName = accountName;
+    saveStores(stores);
+  }
+}
+
+function disconnectMeta() {
+  const stores = getStores();
+  const idx = stores.findIndex(s => s.id === metaEditingStoreId);
+  if (idx >= 0) {
+    stores[idx].metaToken = '';
+    stores[idx].metaAccountId = '';
+    stores[idx].metaAccountName = '';
+    saveStores(stores);
+  }
+  document.getElementById('meta-token-input').value = '';
+  document.getElementById('meta-connected-info').style.display = 'none';
+  document.getElementById('meta-account-picker').style.display = 'none';
+  document.getElementById('meta-modal-status').innerHTML = '<div style="background:rgba(56,139,253,0.1);border:1px solid rgba(56,139,253,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-blue)">Meta Ads disconnected.</div>';
+  updateMetaBadge();
+  renderAccountsPage();
+}
+
+function updateMetaBadge() {
+  const badges = document.querySelectorAll('#home-conn-badges .pill');
+  if (badges.length > 0) {
+    const metaBadge = badges[0]; // First badge is Meta
+    if (isMetaConnected()) {
+      metaBadge.className = 'pill green';
+      metaBadge.textContent = '✓ Meta Ads live';
+    } else {
+      metaBadge.className = 'pill gray';
+      metaBadge.textContent = '✗ Meta Ads';
+    }
   }
 }
 
@@ -1922,6 +2143,7 @@ function signOut() {
 
 // ===== INIT =====
 updateShopifyBadge();
+updateMetaBadge();
 updateTopbarStoreName();
 renderAccountsPage();
 showPage('home');

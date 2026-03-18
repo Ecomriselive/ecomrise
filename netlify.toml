@@ -8,5 +8,5 @@
   for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Headers = "Content-Type"
+    Access-Control-Allow-Headers = "Content-Type, X-Shopify-Store, X-Shopify-Token, X-Shopify-Client-Id, X-Shopify-Client-Secret, X-Meta-Token, X-Meta-Account"
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
