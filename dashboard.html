@@ -996,7 +996,52 @@
     <div class="finance-input-group" style="margin-top:10px">
       <label>Admin API Access Token</label>
       <input type="password" id="shopify-token-input" placeholder="shpat_xxxxxxxxxxxxx" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%">
-      <div style="font-size:10px;color:var(--text-muted);margin-top:3px">From Shopify Admin → Settings → Apps → Develop apps → Your app → API credentials</div>
+      <div style="margin-top:6px">
+        <div onclick="document.getElementById('token-help').style.display = document.getElementById('token-help').style.display === 'none' ? 'block' : 'none'" style="font-size:11px;color:var(--accent-blue);cursor:pointer;display:flex;align-items:center;gap:4px">
+          <span>❓</span> <span style="text-decoration:underline">How do I get my access token?</span>
+        </div>
+        <div id="token-help" style="display:none;margin-top:8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;line-height:1.7;color:var(--text-secondary)">
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px">🛍 Set up Ecom Rise on your Shopify store</div>
+
+          <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 1 — Enable Developer Apps</div>
+          <div style="margin-bottom:8px">
+            Go to your Shopify Admin → <strong>Settings</strong> → <strong>Apps and sales channels</strong> → <strong>Develop apps</strong><br>
+            If prompted, click <strong>"Allow custom app development"</strong> and confirm.
+          </div>
+
+          <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 2 — Create the App</div>
+          <div style="margin-bottom:8px">
+            Click <strong>"Create an app"</strong><br>
+            App name: <code style="background:var(--bg-card);padding:1px 6px;border-radius:4px;color:var(--accent-blue)">Ecom Rise</code><br>
+            Click <strong>"Create app"</strong>.
+          </div>
+
+          <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 3 — Set API Permissions</div>
+          <div style="margin-bottom:8px">
+            Click <strong>"Configure Admin API scopes"</strong><br>
+            Search and enable these scopes:<br>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 4px 8px">
+              <span class="pill blue" style="font-size:10px">read_orders</span>
+              <span class="pill blue" style="font-size:10px">read_products</span>
+              <span class="pill blue" style="font-size:10px">read_customers</span>
+              <span class="pill blue" style="font-size:10px">read_inventory</span>
+            </div>
+            Click <strong>"Save"</strong>.
+          </div>
+
+          <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 4 — Install & Copy Token</div>
+          <div style="margin-bottom:8px">
+            Click <strong>"Install app"</strong> → confirm by clicking <strong>"Install"</strong><br>
+            You'll see your <strong>Admin API access token</strong> — it starts with <code style="background:var(--bg-card);padding:1px 6px;border-radius:4px;color:var(--accent-green)">shpat_</code><br>
+            <span style="color:var(--accent-orange)">⚠️ Copy it immediately — you can only see it once!</span>
+          </div>
+
+          <div style="font-weight:600;color:var(--accent-blue);margin-bottom:2px">Step 5 — Paste it here</div>
+          <div>
+            Paste the token into the <strong>"Admin API Access Token"</strong> field above and click <strong>Test Connection</strong>. That's it! ✅
+          </div>
+        </div>
+      </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:16px">
       <button class="btn btn-primary" onclick="testShopifyConnection()" id="shopify-test-btn" style="flex:1;justify-content:center">🔗 Test Connection</button>
