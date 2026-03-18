@@ -84,7 +84,17 @@
   .page-header { margin-bottom:20px; }
   .page-title { font-size:20px; font-weight:700; }
   .page-subtitle { font-size:12px; color: var(--text-secondary); margin-top:2px; }
-  .page-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .page-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; gap:8px; flex-wrap:wrap; }
+  .back-btn { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-secondary); cursor:pointer; padding:4px 8px; font-size:14px; transition:all 0.15s; display:none; }
+  .back-btn:hover { background:var(--bg-secondary); color:var(--text-primary); }
+  .date-picker-wrap { position:relative; }
+  .date-picker-btn { background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; color:var(--text-primary); cursor:pointer; padding:5px 10px; font-size:11px; font-weight:600; display:flex; align-items:center; gap:4px; }
+  .date-picker-btn:hover { border-color:var(--accent-blue); }
+  .date-dropdown { display:none; position:absolute; right:0; top:100%; margin-top:4px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; min-width:160px; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.4); overflow:hidden; }
+  .date-dropdown.open { display:block; }
+  .date-option { padding:8px 12px; font-size:12px; cursor:pointer; transition:background 0.1s; color:var(--text-secondary); }
+  .date-option:hover { background:var(--bg-secondary); color:var(--text-primary); }
+  .date-option.active { color:var(--accent-blue); font-weight:600; }
 
   /* CARDS */
   .kpi-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap:8px; margin-bottom:16px; }
@@ -1642,8 +1652,71 @@ let liveShopifyStats = null;
 let liveShopifyOrders = null;
 let shopifyDataLoaded = false;
 
-// ===== PAGE NAVIGATION =====
+// ===== PAGE HISTORY & NAVIGATION =====
+const pageHistory = [];
+let currentDateRange = 'last_30';
+
+const dateRangeOptions = [
+  { key: 'today', label: 'Today' },
+  { key: 'yesterday', label: 'Yesterday' },
+  { key: 'last_7', label: 'Last 7 Days' },
+  { key: 'last_14', label: 'Last 14 Days' },
+  { key: 'last_30', label: 'Last 30 Days' },
+  { key: 'last_60', label: 'Last 60 Days' },
+  { key: 'last_90', label: 'Last 90 Days' },
+];
+
+function getDateRange(key) {
+  const now = new Date();
+  const today = now.toISOString().substring(0, 10);
+  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+  const yd = yesterday.toISOString().substring(0, 10);
+  const daysAgo = (n) => { const d = new Date(now); d.setDate(now.getDate() - n); return d.toISOString().substring(0, 10); };
+
+  switch(key) {
+    case 'today': return { since: today, until: today, label: 'Today' };
+    case 'yesterday': return { since: yd, until: yd, label: 'Yesterday' };
+    case 'last_7': return { since: daysAgo(7), until: today, label: 'Last 7 Days' };
+    case 'last_14': return { since: daysAgo(14), until: today, label: 'Last 14 Days' };
+    case 'last_30': return { since: daysAgo(30), until: today, label: 'Last 30 Days' };
+    case 'last_60': return { since: daysAgo(60), until: today, label: 'Last 60 Days' };
+    case 'last_90': return { since: daysAgo(90), until: today, label: 'Last 90 Days' };
+    default: return { since: daysAgo(30), until: today, label: 'Last 30 Days' };
+  }
+}
+
+function setDateRange(key) {
+  currentDateRange = key;
+  // Update all date picker buttons
+  document.querySelectorAll('.date-picker-btn span').forEach(s => {
+    if (s.classList.contains('dp-label')) s.textContent = getDateRange(key).label;
+  });
+  // Close dropdowns
+  document.querySelectorAll('.date-dropdown').forEach(d => d.classList.remove('open'));
+  // Update active states
+  document.querySelectorAll('.date-option').forEach(o => {
+    o.classList.toggle('active', o.dataset.key === key);
+  });
+  // Reload data with new date range
+  ShopifyAPI.clearCache();
+  loadShopifyData(true);
+}
+
+function goBack() {
+  if (pageHistory.length > 1) {
+    pageHistory.pop(); // remove current
+    const prev = pageHistory.pop(); // get previous (showPage will re-push it)
+    showPage(prev);
+  }
+}
+
+// Pages that should show the date picker
+const analyticsPages = ['home', 'shopify', 'meta-ads', 'campaigns', 'ad-sets', 'daily-trends', 'winning-ads', 'finance'];
+
 function showPage(id) {
+  // Track history
+  if (pageHistory[pageHistory.length - 1] !== id) pageHistory.push(id);
+
   document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
   const page = document.getElementById('page-' + id);
   if (page) { page.style.display = 'block'; initChartsForPage(id); }
@@ -1655,19 +1728,63 @@ function showPage(id) {
   document.getElementById('datePanel').classList.remove('open');
   document.getElementById('currencyPanel').style.display = 'none';
 
+  // Inject back button + date picker into page headers
+  if (page) {
+    const header = page.querySelector('.page-header-row');
+    if (header) {
+      // Remove old injected elements
+      header.querySelectorAll('.injected-back, .injected-date').forEach(e => e.remove());
+
+      // Add back button (show if there's history)
+      if (pageHistory.length > 1) {
+        const backBtn = document.createElement('button');
+        backBtn.className = 'back-btn injected-back';
+        backBtn.style.display = 'inline-flex';
+        backBtn.innerHTML = '←';
+        backBtn.title = 'Go back';
+        backBtn.onclick = goBack;
+        header.insertBefore(backBtn, header.firstChild);
+      }
+
+      // Add date picker on analytics pages
+      if (analyticsPages.includes(id)) {
+        const range = getDateRange(currentDateRange);
+        const wrap = document.createElement('div');
+        wrap.className = 'date-picker-wrap injected-date';
+        wrap.innerHTML = `
+          <button class="date-picker-btn" onclick="this.nextElementSibling.classList.toggle('open')">
+            📅 <span class="dp-label">${range.label}</span> <span style="font-size:8px">▾</span>
+          </button>
+          <div class="date-dropdown">
+            ${dateRangeOptions.map(o => `<div class="date-option${o.key === currentDateRange ? ' active' : ''}" data-key="${o.key}" onclick="setDateRange('${o.key}')">${o.label}</div>`).join('')}
+          </div>
+        `;
+        header.appendChild(wrap);
+      }
+    }
+  }
+
   // Load live data for relevant pages
   if (id === 'home' || id === 'shopify') loadShopifyData();
   if (id === 'accounts') renderAccountsPage();
 }
 
+// Close date dropdowns when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.date-picker-wrap')) {
+    document.querySelectorAll('.date-dropdown').forEach(d => d.classList.remove('open'));
+  }
+});
+
 // ===== LOAD LIVE SHOPIFY DATA =====
 async function loadShopifyData(forceRefresh = false) {
   if (forceRefresh) ShopifyAPI.clearCache();
+  const range = getDateRange(currentDateRange);
   
   try {
     const [stats, ordersData] = await Promise.all([
-      ShopifyAPI.getStats(),
-      ShopifyAPI.getOrders(50)
+      ShopifyAPI.getStats(range.since, range.until),
+      ShopifyAPI.getOrders(50, range.since)
     ]);
 
     if (stats) {
