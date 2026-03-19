@@ -1986,29 +1986,14 @@ function showPage(id) {
 // ===== LOAD LIVE META ADS DATA =====
 async function loadMetaData(forceRefresh = false) {
   if (forceRefresh) MetaAdsAPI.clearCache();
-  
-  // Debug: log connection status
-  const store = getActiveStore();
-  console.log('[Meta Debug] Active store:', store?.id, store?.name);
-  console.log('[Meta Debug] Has token:', !!store?.metaToken);
-  console.log('[Meta Debug] Has account:', !!store?.metaAccountId, store?.metaAccountId);
-  console.log('[Meta Debug] isMetaConnected:', isMetaConnected());
-  
-  if (!isMetaConnected()) {
-    console.warn('[Meta Debug] NOT CONNECTED — skipping data load. Please connect Meta Ads via the Apps panel.');
-    return;
-  }
+  if (!isMetaConnected()) return;
   const range = getDateRange(currentDateRange);
-  console.log('[Meta Debug] Fetching data for range:', range.since, '→', range.until);
 
   try {
     const [stats, campaignsData] = await Promise.all([
       MetaAdsAPI.getStats(range.since, range.until),
       MetaAdsAPI.getCampaigns(range.since, range.until)
     ]);
-
-    console.log('[Meta Debug] Stats received:', !!stats, stats);
-    console.log('[Meta Debug] Campaigns received:', !!campaignsData, campaignsData?.campaigns?.length, 'campaigns');
 
     if (stats) {
       liveMetaStats = stats;
@@ -2017,14 +2002,14 @@ async function loadMetaData(forceRefresh = false) {
       renderMetaDailyTrends(stats);
     }
     if (campaignsData) {
-      lastMetaData = campaignsData; // Ensure this is set for toggles to work
+      lastMetaData = campaignsData;
       liveMetaCampaigns = campaignsData.campaigns;
       renderMetaCampaigns(campaignsData.campaigns);
       renderCampaignPerformancePage(campaignsData.campaigns);
       renderAdSetsPage(campaignsData.campaigns);
     }
   } catch (err) {
-    console.error('[Meta Debug] FAILED to load Meta data:', err);
+    console.error('Failed to load Meta data:', err);
   }
 }
 
