@@ -599,7 +599,7 @@
     </div>
     <div class="section-card">
       <table class="data-table">
-        <thead><tr><th>Ad Set</th><th>Campaign</th><th>Spend ↓</th><th>Revenue</th><th>ROAS</th><th>Purchases</th><th>CTR</th><th>CPC</th><th>Status</th></tr></thead>
+        <thead><tr><th>Campaign</th><th>Daily Spend</th><th>Revenue</th><th>ROAS</th><th>Purchases</th><th>CTR</th><th>CPC</th><th>Status</th></tr></thead>
         <tbody>
           <tr><td>14/03/26 LARA SANDALS</td><td>14/03/26 LARA SANDALS</td><td>€1.46</td><td>€0.00</td><td>0.00</td><td>0</td><td>0.00%</td><td>€0.00</td><td><span class="pill gray">—</span></td></tr>
           <tr><td>17/03/26 MARY-JANE KOLLEKTION</td><td>17/03/26 MARY-JANE KOLLEKTION</td><td>€1.14</td><td>€0.00</td><td>0.00</td><td>0</td><td>0.00%</td><td style="color:var(--accent-green)">€0.00</td><td><span class="pill gray">—</span></td></tr>
@@ -1993,36 +1993,31 @@ function renderMetaKPIs(stats) {
   }
 
   // Update Meta metric cards
-  const mkCards = document.querySelectorAll('#page-meta-ads .smc');
+  // Update Meta metric cards - use .kpi-card and match labels exactly
+  const mkCards = document.querySelectorAll('#page-meta-ads .kpi-card');
   mkCards.forEach(card => {
-    const label = card.querySelector('.smc-label')?.textContent?.trim();
-    const valueEl = card.querySelector('.smc-value');
-    const changeEl = card.querySelector('.smc-change');
+    const label = card.querySelector('.kpi-label')?.textContent?.trim();
+    const valueEl = card.querySelector('.kpi-value');
 
     switch (label) {
-      case 'Total Spend':
+      case 'Spend':
         if (valueEl) valueEl.textContent = fmt(stats.totalSpend);
-        if (changeEl) changeEl.textContent = `${stats.totalImpressions.toLocaleString()} imp`;
         break;
       case 'ROAS':
-        if (valueEl) valueEl.textContent = stats.roas.toFixed(2) + 'x';
-        if (changeEl) changeEl.innerHTML = stats.roas >= 3 ? '<span style="color:var(--accent-green)">✓ Profitable</span>' : '<span style="color:var(--accent-orange)">⚠ Target 3.0x</span>';
+        if (valueEl) valueEl.textContent = stats.roas.toFixed(2);
         break;
-      case 'Total Revenue':
+      case 'Revenue':
         if (valueEl) valueEl.textContent = fmt(stats.totalRevenue);
-        if (changeEl) changeEl.textContent = `${stats.totalPurchases} purchases`;
         break;
-      case 'CPC (Avg)':
-        if (valueEl) valueEl.textContent = stats.avgCPC ? fmt(stats.avgCPC) : '€0.00';
-        if (changeEl) changeEl.textContent = `${fmtPct(stats.avgCTR)} CTR`;
+      case 'Profit':
+        const profit = stats.totalRevenue - stats.totalSpend;
+        if (valueEl) {
+          valueEl.textContent = fmt(profit);
+          valueEl.style.color = profit >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+        }
         break;
-      case 'CPM (Avg)':
-        if (valueEl) valueEl.textContent = stats.avgCPM ? fmt(stats.avgCPM) : '€0.00';
-        if (changeEl) changeEl.textContent = 'Per 1k impressions';
-        break;
-      case 'Reach':
-        if (valueEl) valueEl.textContent = stats.totalReach.toLocaleString();
-        if (changeEl) changeEl.textContent = `${stats.frequency.toFixed(2)}x freq`;
+      case 'Orders':
+        if (valueEl) valueEl.textContent = stats.totalPurchases;
         break;
     }
   });
@@ -2040,7 +2035,7 @@ function renderHomePageMeta(stats) {
       if (valueEl) valueEl.textContent = fmt(stats.totalSpend);
       if (changeEl) { changeEl.className = 'kpi-change neutral'; changeEl.textContent = 'Meta Ads'; }
     } else if (label === 'ROAS') {
-      if (valueEl) valueEl.textContent = stats.roas.toFixed(2) + 'x';
+      if (valueEl) valueEl.textContent = stats.roas.toFixed(2);
       if (changeEl) { changeEl.className = 'kpi-change ' + (stats.roas >= 3 ? 'up' : 'neutral'); changeEl.textContent = stats.roas >= 3 ? '↑ Scaling' : 'Ready'; }
     }
   });
