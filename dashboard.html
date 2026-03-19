@@ -2165,6 +2165,13 @@ function renderMetaKPIs(stats) {
         break;
     }
   });
+
+  // If we have daily data, ensure the Trends/Finance table is updated
+  if (stats.dailyData && stats.dailyData.length > 0) {
+    if (typeof renderMetaDailyTrends === 'function') {
+      renderMetaDailyTrends(stats);
+    }
+  }
 }
 
 function renderHomePageMeta(stats) {
@@ -2457,6 +2464,21 @@ function renderCampaignPerformancePage(campaigns) {
         </div>
       </div>
     `).join('');
+
+    // Update charts with real data
+    const chartLabels = filtered.map(c => c.name);
+    const spendData = filtered.map(c => c.spend);
+    const revenueData = filtered.map(c => c.revenue);
+    
+    mkChart('spendByCampaignChart', 'bar', {
+      labels: chartLabels,
+      datasets: [{ label: 'Spend', data: spendData, backgroundColor: '#388bfd88', borderColor: '#388bfd', borderWidth: 1 }]
+    }, { indexAxis: 'y' });
+
+    mkChart('revByCampaignChart', 'bar', {
+      labels: chartLabels,
+      datasets: [{ label: 'Revenue', data: revenueData, backgroundColor: '#3fb95088', borderColor: '#3fb950', borderWidth: 1 }]
+    }, { indexAxis: 'y' });
   }
 
   // Render Table
