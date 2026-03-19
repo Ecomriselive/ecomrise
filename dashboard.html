@@ -2207,6 +2207,30 @@ function renderHomeKPIs(stats) {
       case 'Fulfillment Rate':
         if (valueEl) valueEl.textContent = fmtPct(stats.fulfillmentRate);
         break;
+      case 'Order Interval': {
+        // Calculate avg time between orders using live orders data
+        const orders = liveShopifyOrders || [];
+        if (orders.length >= 2) {
+          const sorted = [...orders].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          let totalGap = 0;
+          for (let i = 1; i < sorted.length; i++) {
+            totalGap += new Date(sorted[i].created_at) - new Date(sorted[i-1].created_at);
+          }
+          const avgMs = totalGap / (sorted.length - 1);
+          const avgHours = avgMs / (1000 * 60 * 60);
+          if (avgHours < 24) {
+            if (valueEl) { valueEl.style.fontSize = '16px'; valueEl.textContent = avgHours.toFixed(1) + ' hrs'; }
+          } else {
+            const avgDays = avgHours / 24;
+            if (valueEl) { valueEl.style.fontSize = '16px'; valueEl.textContent = avgDays.toFixed(1) + ' days'; }
+          }
+          if (noteEl) noteEl.textContent = `From ${orders.length} orders`;
+        } else {
+          if (valueEl) { valueEl.style.fontSize = '16px'; valueEl.textContent = '—'; }
+          if (noteEl) noteEl.textContent = 'No orders yet';
+        }
+        break;
+      }
     }
   });
 
