@@ -162,8 +162,8 @@
   .date-pill.active { background: var(--brand-blue); border-color: var(--brand-blue); color:#fff; }
 
   /* FILTER TABS */
-  .filter-tabs { display:flex; gap:4px; background: var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:3px; margin-bottom:12px; width:fit-content; }
-  .filter-tab { padding:4px 10px; border-radius:4px; font-size:11px; cursor:pointer; color: var(--text-secondary); }
+  .filter-tabs { display:flex; gap:4px; background: var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:2px; width:fit-content; height:32px; box-sizing:border-box; align-items:center; }
+  .filter-tab { padding:4px 12px; border-radius:4px; font-size:11px; cursor:pointer; color: var(--text-secondary); height:26px; display:flex; align-items:center; }
   .filter-tab.active { background: var(--bg-card-hover); color: var(--text-primary); font-weight:600; }
   .filter-tab:hover { color: var(--text-primary); }
 
@@ -588,7 +588,7 @@
       <div class="kpi-card"><div class="kpi-dot green"></div><div class="kpi-label">Orders</div><div class="kpi-value" style="font-size:18px">0</div></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin:12px 0">
-      <input type="text" placeholder="🔍 Search ad sets or campaigns..." style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text-primary);font-size:12px;width:260px">
+      <input type="text" placeholder="🔍 Search ad sets or campaigns..." style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:0 12px;color:var(--text-primary);font-size:12px;width:260px;height:32px;box-sizing:border-box">
       <div class="filter-tabs">
         <div class="filter-tab active">All</div>
         <div class="filter-tab" style="color:var(--accent-red)">Kill</div>
