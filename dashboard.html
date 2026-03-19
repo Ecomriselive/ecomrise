@@ -1581,7 +1581,8 @@ function facebookLogin() {
     return;
   }
 
-  const redirectUri = window.location.origin + '/dashboard.html';
+  // Use absolute URL to match Meta portal exactly
+  const redirectUri = 'https://ecomrise.netlify.app/dashboard.html';
   const scope = 'ads_read,read_insights';
   const authUrl = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=token`;
 
