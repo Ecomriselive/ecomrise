@@ -808,8 +808,30 @@
         <div class="page-title">Fulfilment</div>
         <div class="page-subtitle">Order fulfilment tracking and analytics</div>
       </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-secondary btn-sm" onclick="loadShopifyData(true)" style="color:var(--accent-green)">↻ Refresh</button>
+      </div>
     </div>
-    <!-- Custom fulfilment content will go here -->
+    <div class="section-card" style="margin-top:14px">
+      <div class="section-header"><span class="section-title">Orders</span></div>
+      <table class="data-table" style="font-size:11px">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Total</th>
+            <th>Payment</th>
+            <th>Date</th>
+            <th>Fulfilment</th>
+            <th>Tracking Number</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="fulfilment-orders-tbody">
+          <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Loading orders...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- ===== MESSAGES PAGE ===== -->
@@ -2001,6 +2023,7 @@ async function loadShopifyData(forceRefresh = false) {
     if (ordersData) {
       liveShopifyOrders = ordersData.orders;
       renderShopifyOrders(ordersData.orders);
+      renderFulfilmentOrders(ordersData.orders);
     }
   } catch (err) {
     console.error('Failed to load Shopify data:', err);
@@ -2434,6 +2457,53 @@ function renderShopifyOrders(orders) {
       <td><span class="pill ${paymentPill}">${capitalize(o.financial_status)}</span></td>
       <td><span class="pill ${fulfillPill}">${capitalize(o.fulfillment_status)}</span></td>
       <td style="color:var(--text-muted)">${fmtDate(o.created_at)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== RENDER FULFILMENT ORDERS TABLE =====
+function renderFulfilmentOrders(orders) {
+  const tbody = document.getElementById('fulfilment-orders-tbody');
+  if (!tbody) return;
+
+  if (!orders || orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">No orders found for this period</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = orders.map(o => {
+    const paymentPill = o.financial_status === 'paid' ? 'green' :
+                        o.financial_status === 'refunded' ? 'red' :
+                        o.financial_status === 'partially_refunded' ? 'orange' : 'gray';
+    const fulfillPill = o.fulfillment_status === 'fulfilled' ? 'green' :
+                        o.fulfillment_status === 'partial' ? 'orange' : 'orange';
+    const trackingDisplay = o.tracking_number 
+      ? (o.tracking_url ? `<a href="${o.tracking_url}" target="_blank" style="color:var(--accent-blue);text-decoration:none">${o.tracking_number}</a>` : o.tracking_number)
+      : '<span style="color:var(--text-muted)">—</span>';
+    
+    // Status logic
+    let statusText = 'Pending';
+    let statusPill = 'gray';
+    if (o.fulfillment_status === 'fulfilled') {
+      if (o.shipment_status === 'delivered') { statusText = 'Delivered'; statusPill = 'green'; }
+      else if (o.shipment_status === 'in_transit') { statusText = 'In Transit'; statusPill = 'blue'; }
+      else if (o.shipment_status === 'out_for_delivery') { statusText = 'Out for Delivery'; statusPill = 'blue'; }
+      else { statusText = 'Shipped'; statusPill = 'green'; }
+    } else if (o.fulfillment_status === 'partial') {
+      statusText = 'Partial'; statusPill = 'orange';
+    } else {
+      statusText = 'Pending'; statusPill = 'gray';
+    }
+
+    return `<tr>
+      <td class="td-link">${o.name}</td>
+      <td>${o.customer || 'Guest'}</td>
+      <td>${fmt(o.total)}</td>
+      <td><span class="pill ${paymentPill}">${capitalize(o.financial_status)}</span></td>
+      <td style="color:var(--text-muted)">${fmtDate(o.created_at)}</td>
+      <td><span class="pill ${fulfillPill}">${capitalize(o.fulfillment_status)}</span></td>
+      <td>${trackingDisplay}</td>
+      <td><span class="pill ${statusPill}">${statusText}</span></td>
     </tr>`;
   }).join('');
 }

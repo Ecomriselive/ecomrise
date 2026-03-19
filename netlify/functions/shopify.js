@@ -68,25 +68,43 @@ exports.handler = async (event) => {
         const url = `${baseUrl}/orders.json?status=any&limit=${limit}&created_at_min=${sinceDate}T00:00:00Z&order=created_at+desc`;
         const data = await shopifyFetch(url, token);
         
-        const orders = (data.orders || []).map(o => ({
-          id: o.id,
-          name: o.name,
-          customer: o.customer ? `${o.customer.first_name || ''} ${o.customer.last_name || ''}`.trim() : 'Guest',
-          email: o.customer?.email || '',
-          total: parseFloat(o.total_price || 0),
-          subtotal: parseFloat(o.subtotal_price || 0),
-          currency: o.currency,
-          financial_status: o.financial_status,
-          fulfillment_status: o.fulfillment_status || 'unfulfilled',
-          created_at: o.created_at,
-          line_items: (o.line_items || []).map(li => ({
-            title: li.title,
-            quantity: li.quantity,
-            price: parseFloat(li.price || 0)
-          })),
-          shipping_country: o.shipping_address?.country || '',
-          refunds: (o.refunds || []).length
-        }));
+        const orders = (data.orders || []).map(o => {
+          // Extract tracking info from fulfillments
+          const fulfillments = (o.fulfillments || []).map(f => ({
+            tracking_number: f.tracking_number || '',
+            tracking_url: f.tracking_url || '',
+            tracking_company: f.tracking_company || '',
+            status: f.status || '',
+            shipment_status: f.shipment_status || ''
+          }));
+          const primaryTracking = fulfillments.length > 0 ? fulfillments[0].tracking_number : '';
+          const primaryTrackingUrl = fulfillments.length > 0 ? fulfillments[0].tracking_url : '';
+          const shipmentStatus = fulfillments.length > 0 ? fulfillments[0].shipment_status : '';
+
+          return {
+            id: o.id,
+            name: o.name,
+            customer: o.customer ? `${o.customer.first_name || ''} ${o.customer.last_name || ''}`.trim() : 'Guest',
+            email: o.customer?.email || '',
+            total: parseFloat(o.total_price || 0),
+            subtotal: parseFloat(o.subtotal_price || 0),
+            currency: o.currency,
+            financial_status: o.financial_status,
+            fulfillment_status: o.fulfillment_status || 'unfulfilled',
+            created_at: o.created_at,
+            tracking_number: primaryTracking,
+            tracking_url: primaryTrackingUrl,
+            shipment_status: shipmentStatus,
+            fulfillments,
+            line_items: (o.line_items || []).map(li => ({
+              title: li.title,
+              quantity: li.quantity,
+              price: parseFloat(li.price || 0)
+            })),
+            shipping_country: o.shipping_address?.country || '',
+            refunds: (o.refunds || []).length
+          };
+        });
 
         return respond(200, { orders, count: orders.length });
       }
