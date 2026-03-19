@@ -1268,6 +1268,55 @@ const ShopifyAPI = {
     return this.fetch('orders', params);
   }
 };
+// ===== META ADS API MODULE =====
+const MetaAdsAPI = {
+  cache: {},
+  cacheExpiry: 5 * 60 * 1000,
+
+  async fetch(action, params = {}) {
+    const s = getActiveStore();
+    if (!s || !s.metaToken || !s.metaAccountId) return null;
+
+    const cacheKey = action + JSON.stringify(params);
+    const cached = this.cache[cacheKey];
+    if (cached && Date.now() - cached.time < this.cacheExpiry) return cached.data;
+
+    const qs = new URLSearchParams({ action, ...params }).toString();
+    try {
+      const res = await fetch(`/.netlify/functions/meta?${qs}`, {
+        headers: { 
+          'X-Meta-Token': s.metaToken,
+          'X-Meta-Account': s.metaAccountId
+        }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      this.cache[cacheKey] = { data, time: Date.now() };
+      return data;
+    } catch (err) {
+      console.error('MetaAdsAPI error:', err);
+      return null;
+    }
+  },
+
+  clearCache() { this.cache = {}; },
+
+  async getStats(since, until) {
+    const params = {};
+    if (since) params.since = since;
+    if (until) params.until = until;
+    return this.fetch('stats', params);
+  },
+
+  async getCampaigns(since, until) {
+    const params = {};
+    if (since) params.since = since;
+    if (until) params.until = until;
+    return this.fetch('campaigns', params);
+  }
+};
+
 
 // ===== ACCOUNTS PAGE RENDERER =====
 function renderAccountsPage() {
@@ -1787,7 +1836,34 @@ function showPage(id) {
 
   // Load live data for relevant pages
   if (id === 'home' || id === 'shopify') loadShopifyData();
+  if (id === 'home' || id === 'meta-ads') loadMetaData();
   if (id === 'accounts') renderAccountsPage();
+}
+
+// ===== LOAD LIVE META ADS DATA =====
+async function loadMetaData(forceRefresh = false) {
+  if (forceRefresh) MetaAdsAPI.clearCache();
+  if (!isMetaConnected()) return;
+  const range = getDateRange(currentDateRange);
+
+  try {
+    const [stats, campaignsData] = await Promise.all([
+      MetaAdsAPI.getStats(range.since, range.until),
+      MetaAdsAPI.getCampaigns(range.since, range.until)
+    ]);
+
+    if (stats) {
+      liveMetaStats = stats;
+      renderMetaKPIs(stats);
+      renderHomePageMeta(stats);
+    }
+    if (campaignsData) {
+      liveMetaCampaigns = campaignsData.campaigns;
+      renderMetaCampaigns(campaignsData.campaigns);
+    }
+  } catch (err) {
+    console.error('Failed to load Meta data:', err);
+  }
 }
 
 // Close date dropdowns when clicking outside
@@ -1915,6 +1991,87 @@ function renderHomeKPIs(stats) {
       });
     }, 100);
   }
+}
+
+// ===== RENDER META ADS ANALYTICS PAGE =====
+function renderMetaKPIs(stats) {
+  // Update date subtitle
+  const subtitle = document.querySelector('#page-meta-ads .page-subtitle');
+  if (subtitle && stats.dateRange) {
+    subtitle.textContent = `Live Meta Ads data · ${stats.dateRange.since} → ${stats.dateRange.until}`;
+  }
+
+  // Update Meta metric cards
+  const mkCards = document.querySelectorAll('#page-meta-ads .smc');
+  mkCards.forEach(card => {
+    const label = card.querySelector('.smc-label')?.textContent?.trim();
+    const valueEl = card.querySelector('.smc-value');
+    const changeEl = card.querySelector('.smc-change');
+
+    switch (label) {
+      case 'Total Spend':
+        if (valueEl) valueEl.textContent = fmt(stats.totalSpend);
+        if (changeEl) changeEl.textContent = `${stats.totalImpressions.toLocaleString()} impressions`;
+        break;
+      case 'ROAS':
+        if (valueEl) valueEl.textContent = stats.roas.toFixed(2) + 'x';
+        if (changeEl) changeEl.innerHTML = stats.roas >= 3 ? '<span style="color:var(--accent-green)">✓ Profitable</span>' : '<span style="color:var(--accent-orange)">⚠ Target 3.0x</span>';
+        break;
+      case 'Total Revenue':
+        if (valueEl) valueEl.textContent = fmt(stats.totalRevenue);
+        if (changeEl) changeEl.textContent = `${stats.totalPurchases} purchases`;
+        break;
+      case 'CPC (Avg)':
+        if (valueEl) valueEl.textContent = fmt(stats.avgCPC);
+        if (changeEl) changeEl.textContent = `${fmtPct(stats.avgCTR)} CTR`;
+        break;
+      case 'CPM (Avg)':
+        if (valueEl) valueEl.textContent = fmt(stats.avgCPM);
+        if (changeEl) changeEl.textContent = 'Cost per 1k impressions';
+        break;
+      case 'Reach':
+        if (valueEl) valueEl.textContent = stats.totalReach.toLocaleString();
+        if (changeEl) changeEl.textContent = `${stats.frequency.toFixed(2)}x frequency`;
+        break;
+    }
+  });
+}
+
+function renderHomePageMeta(stats) {
+  // Update Meta KPI cards on Home page
+  const homeMetaCards = document.querySelectorAll('#page-home .kpi-grid .kpi-card');
+  homeMetaCards.forEach(card => {
+    const label = card.querySelector('.kpi-label')?.textContent?.trim();
+    const valueEl = card.querySelector('.kpi-value');
+    const changeEl = card.querySelector('.kpi-change');
+
+    if (label === 'Ad Spend') {
+      if (valueEl) valueEl.textContent = fmt(stats.totalSpend);
+      if (changeEl) { changeEl.className = 'kpi-change neutral'; changeEl.textContent = 'Meta Ads'; }
+    } else if (label === 'ROAS') {
+      if (valueEl) valueEl.textContent = stats.roas.toFixed(2) + 'x';
+      if (changeEl) { changeEl.className = 'kpi-change ' + (stats.roas >= 3 ? 'up' : 'neutral'); changeEl.textContent = stats.roas >= 3 ? '↑ Scaling' : 'Ready'; }
+    }
+  });
+}
+
+function renderMetaCampaigns(campaigns) {
+  const tbody = document.querySelector('#page-meta-ads .data-table tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = campaigns.map(c => `
+    <tr>
+      <td>
+        <div style="font-weight:600;font-size:12px">${c.name}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${capitalize(c.objective)} • ${capitalize(c.status)}</div>
+      </td>
+      <td>${fmt(c.spend)}</td>
+      <td>${c.roas.toFixed(2)}x</td>
+      <td class="positive">${fmt(c.revenue)}</td>
+      <td>${c.purchases}</td>
+      <td>${fmt(c.costPerPurchase)}</td>
+    </tr>
+  `).join('');
 }
 
 // ===== RENDER SHOPIFY ANALYTICS PAGE =====
