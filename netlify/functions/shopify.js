@@ -75,7 +75,8 @@ exports.handler = async (event) => {
             tracking_url: f.tracking_url || '',
             tracking_company: f.tracking_company || '',
             status: f.status || '',
-            shipment_status: f.shipment_status || ''
+            shipment_status: f.shipment_status || '',
+            updated_at: f.updated_at || ''
           }));
           const primaryTracking = fulfillments.length > 0 ? fulfillments[0].tracking_number : '';
           const primaryTrackingUrl = fulfillments.length > 0 ? fulfillments[0].tracking_url : '';
@@ -92,6 +93,7 @@ exports.handler = async (event) => {
             financial_status: o.financial_status,
             fulfillment_status: o.fulfillment_status || 'unfulfilled',
             created_at: o.created_at,
+            updated_at: o.updated_at,
             tracking_number: primaryTracking,
             tracking_url: primaryTrackingUrl,
             shipment_status: shipmentStatus,

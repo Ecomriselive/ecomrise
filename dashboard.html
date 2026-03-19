@@ -2028,11 +2028,15 @@ function showPage(id) {
   if (id === 'accounts') renderAccountsPage();
 }
 
-// ===== LOAD LIVE META ADS DATA =====
+let isMetaDataLoading = false;
 async function loadMetaData(forceRefresh = false) {
+  if (isMetaDataLoading) return;
+  isMetaDataLoading = true;
+  
   if (forceRefresh) MetaAdsAPI.clearCache();
   if (!isMetaConnected()) {
-    // Show proper empty state for all Meta-related UI
+    isMetaDataLoading = false;
+    // ... clear UI ...
     const metaTbody = document.querySelector('#page-meta-ads .data-table tbody');
     if (metaTbody) metaTbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Connect Meta Ads to see campaign data</td></tr>';
     document.querySelectorAll('#page-meta-ads .kpi-value').forEach(el => { el.textContent = '---'; });
@@ -2076,6 +2080,18 @@ async function loadMetaData(forceRefresh = false) {
     if (metaTbody) metaTbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--accent-red);padding:20px">⚠️ Error: ${err.message}. Try refreshing.</td></tr>`;
     const homeTbody = document.querySelector('#page-home .section-card .data-table tbody');
     if (homeTbody) homeTbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--accent-red);padding:20px">⚠️ Error loading campaign data.</td></tr>`;
+    
+    // Show error on Meta KPIs
+    document.querySelectorAll('#page-home .kpi-card').forEach(card => {
+      const label = card.querySelector('.kpi-label')?.textContent?.trim();
+      const metaLabels = ['Ad Spend', 'ROAS', 'Cost Per Result', 'Avg CTR', 'CPM', 'Impressions', 'Add to Carts', 'Checkout Initiated'];
+      if (metaLabels.includes(label)) {
+        const val = card.querySelector('.kpi-value');
+        if (val) val.textContent = '⚠️ Error';
+      }
+    });
+  } finally {
+    isMetaDataLoading = false;
   }
 }
 
@@ -2086,8 +2102,11 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ===== LOAD LIVE SHOPIFY DATA =====
+let isShopifyDataLoading = false;
 async function loadShopifyData(forceRefresh = false) {
+  if (isShopifyDataLoading) return;
+  isShopifyDataLoading = true;
+  
   if (forceRefresh) ShopifyAPI.clearCache();
   const range = getDateRange(currentDateRange);
   
@@ -2110,6 +2129,16 @@ async function loadShopifyData(forceRefresh = false) {
     }
   } catch (err) {
     console.error('Failed to load Shopify data:', err);
+    // Show error on KPIs
+    document.querySelectorAll('#page-home .kpi-card').forEach(card => {
+      const label = card.querySelector('.kpi-label')?.textContent?.trim();
+      if (['Revenue', 'Orders', 'Avg Order Value'].includes(label)) {
+        const val = card.querySelector('.kpi-value');
+        if (val) val.textContent = '⚠️ Error';
+      }
+    });
+  } finally {
+    isShopifyDataLoading = false;
   }
 }
 
