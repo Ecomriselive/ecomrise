@@ -412,10 +412,10 @@
 
   <!-- ===== HOME PAGE ===== -->
   <div id="page-home" class="page">
-    <div class="page-header-row">
+    <div class="page-header-row" style="display:flex;align-items:center;gap:10px">
+      <div style="cursor:pointer;font-size:18px;color:var(--text-muted);line-height:1" onclick="showPage('accounts')" title="Back">←</div>
       <div class="title-container">
         <div class="page-title" style="display:flex;align-items:baseline;gap:10px">
-          <span style="cursor:pointer;font-size:18px;color:var(--text-muted)" onclick="showPage('accounts')" title="Back">←</span>
           Hello Lloyd 👋
           <span style="font-size:14px;font-weight:500;color:var(--text-muted)">Store — <span id="home-store-code" style="color:var(--accent-blue);font-weight:600">No store selected</span> <span onclick="renameActiveStore()" style="cursor:pointer;font-size:12px;opacity:0.6" title="Rename store">✏️</span></span>
         </div>
