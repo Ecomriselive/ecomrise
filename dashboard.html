@@ -1749,8 +1749,8 @@ function getDateRange(key) {
 function setDateRange(key) {
   currentDateRange = key;
   // Update all date picker buttons
-  document.querySelectorAll('.date-picker-btn span').forEach(s => {
-    if (s.classList.contains('dp-label')) s.textContent = getDateRange(key).label;
+  document.querySelectorAll('.date-picker-btn span.dp-label').forEach(s => {
+    s.textContent = getDateRange(key).label;
   });
   // Close dropdowns
   document.querySelectorAll('.date-dropdown').forEach(d => d.classList.remove('open'));
@@ -1760,7 +1760,9 @@ function setDateRange(key) {
   });
   // Reload data with new date range
   ShopifyAPI.clearCache();
+  MetaAdsAPI.clearCache();
   loadShopifyData(true);
+  loadMetaData(true);
 }
 
 function goBack() {
