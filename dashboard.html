@@ -2440,15 +2440,26 @@ function renderCampaignPerformancePage(campaigns) {
   // Render Campaign Cards
   const cardsGrid = page.querySelector('.campaign-cards');
   if (cardsGrid) {
-    let filtered = campaigns;
+    // 1. Sort: Active campaigns first, then by spend
+    const sorted = [...campaigns].sort((a, b) => {
+      const activeA = a.status === 'ACTIVE' ? 1 : 0;
+      const activeB = b.status === 'ACTIVE' ? 1 : 0;
+      if (activeA !== activeB) return activeB - activeA;
+      return b.spend - a.spend;
+    });
+
+    // 2. Filter for Cards based on toggle
+    let cardData = sorted;
     if (campaignLiveFilter === 'live') {
-      filtered = filtered.filter(c => c.status === 'ACTIVE');
-    }
-    if (campaignCountLimit > 0) {
-      filtered = filtered.slice(0, campaignCountLimit);
+      cardData = cardData.filter(c => c.status === 'ACTIVE');
     }
 
-    cardsGrid.innerHTML = filtered.map(c => `
+    // 3. Limit for Cards
+    if (campaignCountLimit > 0) {
+      cardData = cardData.slice(0, campaignCountLimit);
+    }
+
+    cardsGrid.innerHTML = cardData.map(c => `
       <div class="campaign-card">
         <div style="overflow:hidden">
           <div style="font-weight:600;font-size:12px;margin-bottom:4px">${c.name}</div>
@@ -2465,10 +2476,11 @@ function renderCampaignPerformancePage(campaigns) {
       </div>
     `).join('');
 
-    // Update charts with real data
-    const chartLabels = filtered.map(c => c.name);
-    const spendData = filtered.map(c => c.spend);
-    const revenueData = filtered.map(c => c.revenue);
+    // 4. Update charts (Always LIVE Only as per Lloyd's request)
+    const liveOnly = campaigns.filter(c => c.status === 'ACTIVE');
+    const chartLabels = liveOnly.map(c => c.name);
+    const spendData = liveOnly.map(c => c.spend);
+    const revenueData = liveOnly.map(c => c.revenue);
     
     mkChart('spendByCampaignChart', 'bar', {
       labels: chartLabels,
@@ -2481,11 +2493,24 @@ function renderCampaignPerformancePage(campaigns) {
     }, { indexAxis: 'y' });
   }
 
-  // Render Table
+  // 5. Render Table (Follows the card filtration/sorting logic)
   const tbody = page.querySelector('.data-table tbody');
   if (tbody) {
-    const liveCampaigns = campaigns.filter(c => c.status === 'ACTIVE' || campaignLiveFilter === 'all');
-    tbody.innerHTML = liveCampaigns.map(c => `
+    // For the table, we might want to follow the 'Live Only' toggle but show more rows?
+    // Lloyd said: "all off the campaings in meta should show up depending on the next toggle"
+    // Let's use the sorted list and filter by 'live' toggle if active
+    let tableData = [...campaigns].sort((a, b) => {
+      const activeA = a.status === 'ACTIVE' ? 1 : 0;
+      const activeB = b.status === 'ACTIVE' ? 1 : 0;
+      if (activeA !== activeB) return activeB - activeA;
+      return b.spend - a.spend;
+    });
+    
+    if (campaignLiveFilter === 'live') {
+      tableData = tableData.filter(c => c.status === 'ACTIVE');
+    }
+
+    tbody.innerHTML = tableData.map(c => `
       <tr>
         <td>
           <div style="font-weight:600;font-size:12px">${c.name}</div>
