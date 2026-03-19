@@ -1571,44 +1571,34 @@ function closeMetaModal() {
   metaPendingToken = null;
 }
 
-// ─── Facebook Login OAuth popup ───
+// ─── Facebook SDK Login ───
+// This is the official, robust way to handle the login flow
 function facebookLogin() {
   const statusEl = document.getElementById('meta-modal-status');
-  const appId = META_APP_ID;
-
-  if (!appId) {
-    statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Meta App ID not configured.</div>';
-    return;
+  if (typeof FB === 'undefined') {
+    // Load SDK if not present
+    const script = document.createElement('script');
+    script.src = "https://connect.facebook.net/en_US/sdk.js";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      FB.init({ appId: META_APP_ID, cookie: true, xfbml: true, version: 'v22.0' });
+      doFBLogin();
+    };
+    document.head.appendChild(script);
+  } else {
+    doFBLogin();
   }
 
-  // Use absolute URL to match Meta portal exactly
-  const redirectUri = 'https://ecomrise.netlify.app/dashboard.html';
-  const scope = 'ads_read'; // Simplified to avoid 'Invalid Scope' errors
-  const authUrl = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=token`;
-
-  const popup = window.open(authUrl, 'meta_login', 'width=600,height=700,scrollbars=yes');
-
-  const checkPopup = setInterval(() => {
-    try {
-      if (!popup || popup.closed) {
-        clearInterval(checkPopup);
-        return;
+  function doFBLogin() {
+    FB.login((response) => {
+      if (response.authResponse) {
+        handleMetaToken(response.authResponse.accessToken);
+      } else {
+        statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Login cancelled or not fully authorized.</div>';
       }
-      if (popup.location.origin === window.location.origin) {
-        const hash = popup.location.hash;
-        popup.close();
-        clearInterval(checkPopup);
-
-        if (hash && hash.includes('access_token=')) {
-          const params = new URLSearchParams(hash.substring(1));
-          const token = params.get('access_token');
-          if (token) {
-            handleMetaToken(token);
-          }
-        }
-      }
-    } catch (e) {}
-  }, 500);
+    }, { scope: 'ads_read' });
+  }
 }
 
 // Handle token from either Facebook Login or manual entry
