@@ -817,13 +817,13 @@
         <thead>
           <tr>
             <th>Order</th>
-            <th>Customer</th>
-            <th>Total</th>
-            <th>Payment</th>
             <th>Date</th>
-            <th>Fulfilment</th>
+            <th>Customer</th>
+            <th>Payment</th>
+            <th>Smart Status</th>
             <th>Tracking Number</th>
-            <th>Status</th>
+            <th>Country</th>
+            <th>Total</th>
           </tr>
         </thead>
         <tbody id="fulfilment-orders-tbody">
@@ -997,7 +997,7 @@
   <div class="app-item"><div class="app-icon">📊</div><div class="app-info"><div class="app-name">ROAS Calc</div><div class="app-desc">Check ad performance</div></div></div>
   <div class="app-item"><div class="app-icon">💰</div><div class="app-info"><div class="app-name">Profit Calc</div><div class="app-desc">Net margin calculator</div></div></div>
   <div class="app-item"><div class="app-icon">🏷</div><div class="app-info"><div class="app-name">Price Calc</div><div class="app-desc">Find the right sell price</div></div></div>
-  <div class="app-item"><div class="app-icon">📋</div><div class="app-info"><div class="app-name">Ad Budget</div><div class="app-desc">Plan daily ad spend</div></div></div>
+  <div class="app-item"><div class="app-icon">📋</div><div class="app-name">Ad Budget</div><div class="app-desc">Plan daily ad spend</div></div></div>
   <div class="app-item"><div class="app-icon">🌍</div><div class="app-info"><div class="app-name">World Clock</div><div class="app-desc">Live market times</div></div></div>
   <div class="app-item"><div class="app-icon">📝</div><div class="app-info"><div class="app-name">Quick Notes</div><div class="app-desc">Scratch pad</div></div></div>
   <div class="app-item"><div class="app-icon">🚚</div><div class="app-info"><div class="app-name">Shipping Est.</div><div class="app-desc">Delivery time & cost</div></div></div>
@@ -2638,37 +2638,53 @@ function renderFulfilmentOrders(orders) {
     const paymentPill = o.financial_status === 'paid' ? 'green' :
                         o.financial_status === 'refunded' ? 'red' :
                         o.financial_status === 'partially_refunded' ? 'orange' : 'gray';
-    const fulfillPill = o.fulfillment_status === 'fulfilled' ? 'green' :
-                        o.fulfillment_status === 'partial' ? 'orange' : 'orange';
     const trackingDisplay = o.tracking_number 
       ? (o.tracking_url ? `<a href="${o.tracking_url}" target="_blank" style="color:var(--accent-blue);text-decoration:none">${o.tracking_number}</a>` : o.tracking_number)
       : '<span style="color:var(--text-muted)">—</span>';
     
-    // Status logic
-    let statusText = 'Pending';
-    let statusPill = 'gray';
-    if (o.fulfillment_status === 'fulfilled') {
-      if (o.shipment_status === 'delivered') { statusText = 'Delivered'; statusPill = 'green'; }
-      else if (o.shipment_status === 'in_transit') { statusText = 'In Transit'; statusPill = 'blue'; }
-      else if (o.shipment_status === 'out_for_delivery') { statusText = 'Out for Delivery'; statusPill = 'blue'; }
-      else { statusText = 'Shipped'; statusPill = 'green'; }
-    } else if (o.fulfillment_status === 'partial') {
-      statusText = 'Partial'; statusPill = 'orange';
-    } else {
-      statusText = 'Pending'; statusPill = 'gray';
-    }
+    // Smart AI Status Interpreter
+    const aiStatus = interpretTrackingAI(o);
 
-    return `<tr>
-      <td class="td-link">${o.name}</td>
-      <td>${o.customer || 'Guest'}</td>
-      <td>${fmt(o.total)}</td>
-      <td><span class="pill ${paymentPill}">${capitalize(o.financial_status)}</span></td>
-      <td style="color:var(--text-muted)">${fmtDate(o.created_at)}</td>
-      <td><span class="pill ${fulfillPill}">${capitalize(o.fulfillment_status)}</span></td>
-      <td>${trackingDisplay}</td>
-      <td><span class="pill ${statusPill}">${statusText}</span></td>
-    </tr>`;
+    return `
+      <tr>
+        <td><span style="color:var(--text-secondary);font-weight:600">${o.name}</span></td>
+        <td>${fmtDate(o.created_at)}</td>
+        <td>${o.customer}</td>
+        <td><span class="pill ${paymentPill}">${o.financial_status.toUpperCase()}</span></td>
+        <td><span class="pill ${aiStatus.pill}">${aiStatus.label}</span></td>
+        <td>${trackingDisplay}</td>
+        <td>${o.shipping_country}</td>
+        <td><span style="font-weight:600">${fmt(o.total)}</span></td>
+      </tr>
+    `;
   }).join('');
+}
+
+// AI-Driven Tracking Status Interpreter
+function interpretTrackingAI(order) {
+  const f = order.fulfillment_status;
+  const s = order.shipment_status;
+  const hasTracking = order.tracking_number && order.tracking_number.length > 0;
+
+  // 1. Delivered (Final State)
+  if (s === 'delivered') {
+    return { label: 'Delivered', pill: 'green' };
+  }
+
+  // 2. In Delivery (Active State)
+  if (f === 'fulfilled' || f === 'partial' || hasTracking) {
+    const inDeliveryStates = ['in_transit', 'out_for_delivery', 'ready_for_pickup', 'attempted_delivery', 'confirmed'];
+    if (inDeliveryStates.includes(s)) {
+      return { label: 'In Delivery', pill: 'blue' };
+    }
+    // If it has a tracking number but status is null, it's still "In Delivery" (shipped)
+    if (hasTracking) {
+      return { label: 'In Delivery', pill: 'blue' };
+    }
+  }
+
+  // 3. Not Shipped (Pre-shipment State)
+  return { label: 'Not Shipped', pill: 'gray' };
 }
 
 function renderCampaignPerformancePage(campaigns) {
