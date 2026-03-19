@@ -1955,6 +1955,7 @@ async function loadMetaData(forceRefresh = false) {
       renderMetaCampaigns(campaignsData.campaigns);
       renderCampaignPerformancePage(campaignsData.campaigns);
       renderAdSetsPage(campaignsData.campaigns);
+      renderHomeCampaignTable(campaignsData.campaigns);
     }
   } catch (err) {
     console.error('Failed to load Meta data:', err);
@@ -2007,6 +2008,39 @@ function fmt(n, decimals = 2) {
   return '€' + Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 function fmtPct(n) { return Number(n || 0).toFixed(1) + '%'; }
+
+// ===== HOME PAGE: LIVE CAMPAIGN OVERVIEW TABLE =====
+function renderHomeCampaignTable(campaigns) {
+  const tbody = document.querySelector('#page-home .section-card .data-table tbody');
+  if (!tbody) return;
+
+  // Sort by spend descending
+  const sorted = [...campaigns].sort((a, b) => b.spend - a.spend);
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">No campaign data for this period</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sorted.map(c => {
+    const profit = c.revenue - c.spend;
+    const cpc = c.clicks > 0 ? (c.spend / c.clicks) : 0;
+    const ctr = c.ctr || 0;
+    const atc = c.add_to_cart || c.addToCart || 0;
+    return `<tr>
+      <td><div style="font-weight:600;font-size:11px">${c.name}</div></td>
+      <td>${fmt(c.spend)}</td>
+      <td>${fmt(c.revenue)}</td>
+      <td>${c.roas.toFixed(2)}</td>
+      <td class="${profit >= 0 ? 'positive' : 'negative'}">${fmt(profit)}</td>
+      <td>${c.purchases || 0}</td>
+      <td>${atc}</td>
+      <td>${c.clicks || 0}</td>
+      <td>${fmt(cpc)}</td>
+      <td>${fmtPct(ctr)}</td>
+    </tr>`;
+  }).join('');
+}
 function fmtDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
