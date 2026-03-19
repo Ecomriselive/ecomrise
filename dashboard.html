@@ -1787,6 +1787,9 @@ let shopifyDataLoaded = false;
 // ===== PAGE HISTORY & NAVIGATION =====
 const pageHistory = [];
 let currentDateRange = 'last_30';
+let lastMetaData = null;
+let liveMetaStats = null;
+let liveMetaCampaigns = [];
 
 const dateRangeOptions = [
   { key: 'today', label: 'Today' },
@@ -1992,6 +1995,7 @@ async function loadMetaData(forceRefresh = false) {
       renderMetaDailyTrends(stats);
     }
     if (campaignsData) {
+      lastMetaData = campaignsData; // Ensure this is set for toggles to work
       liveMetaCampaigns = campaignsData.campaigns;
       renderMetaCampaigns(campaignsData.campaigns);
       renderCampaignPerformancePage(campaignsData.campaigns);
