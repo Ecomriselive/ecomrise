@@ -138,6 +138,8 @@ exports.handler = async (event) => {
         const totalRevenue = getActionValue(t.action_values, 'omni_purchase') || getActionValue(t.action_values, 'purchase') || 0;
         const totalClicks = parseInt(t.clicks || 0);
         const totalImpressions = parseInt(t.impressions || 0);
+        const addToCart = parseInt(getActionValue(t.actions, 'add_to_cart') || getActionValue(t.actions, 'omni_add_to_cart') || 0);
+        const checkoutInitiated = parseInt(getActionValue(t.actions, 'initiate_checkout') || getActionValue(t.actions, 'omni_initiate_checkout') || 0);
 
         const dailyArray = (dailyData.data || []).map(d => ({
           date: d.date_start,
@@ -161,6 +163,9 @@ exports.handler = async (event) => {
           totalRevenue: round2(parseFloat(totalRevenue)),
           roas: totalSpend > 0 ? round2(parseFloat(totalRevenue) / totalSpend) : 0,
           costPerPurchase: parseInt(totalPurchases) > 0 ? round2(totalSpend / parseInt(totalPurchases)) : 0,
+          costPerResult: parseInt(totalPurchases) > 0 ? round2(totalSpend / parseInt(totalPurchases)) : 0,
+          addToCart,
+          checkoutInitiated,
           dailyData: dailyArray,
           dateRange: { since, until }
         });

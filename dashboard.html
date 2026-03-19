@@ -454,10 +454,14 @@
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-dot blue"></div><div class="kpi-label">Avg COG / Item (€)</div><div class="kpi-value" style="font-size:16px">€22.42</div><div class="kpi-note">Est. You paid €32.00 · 10% supplier trial €1,034.56</div></div>
       <div class="kpi-card"><div class="kpi-dot green"></div><div class="kpi-label">Avg Order Value</div><div class="kpi-value">€0.00</div></div>
-      <div class="kpi-card"><div class="kpi-dot blue"></div><div class="kpi-label">Avg CPP</div><div class="kpi-value" style="color:var(--accent-green)">€1.34</div><div class="kpi-change down">↓ 0%</div><div class="kpi-note">↑ Above €3 target</div></div>
-      <div class="kpi-card"><div class="kpi-dot orange"></div><div class="kpi-label">Avg CTR</div><div class="kpi-value">1.22%</div><div class="kpi-change down">↓ 98.5%</div><div class="kpi-note">↓ Average: 1.711</div></div>
-      <div class="kpi-card"><div class="kpi-dot blue"></div><div class="kpi-label">CPM</div><div class="kpi-value">€16.45</div><div class="kpi-change down">↓ 14.8%</div><div class="kpi-note">↓ Average CPM</div></div>
-      <div class="kpi-card"><div class="kpi-dot orange"></div><div class="kpi-label">Impressions</div><div class="kpi-value">245</div><div class="kpi-change down">↓ 89.9%</div><div class="kpi-note">↓ Below</div></div>
+      <div class="kpi-card"><div class="kpi-dot blue"></div><div class="kpi-label">Cost Per Result</div><div class="kpi-value" style="color:var(--accent-green)">---</div><div class="kpi-change neutral"></div></div>
+      <div class="kpi-card"><div class="kpi-dot orange"></div><div class="kpi-label">Avg CTR</div><div class="kpi-value">---</div><div class="kpi-change neutral"></div></div>
+      <div class="kpi-card"><div class="kpi-dot blue"></div><div class="kpi-label">CPM</div><div class="kpi-value">---</div><div class="kpi-change neutral"></div></div>
+      <div class="kpi-card"><div class="kpi-dot orange"></div><div class="kpi-label">Impressions</div><div class="kpi-value">---</div><div class="kpi-change neutral"></div></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-dot green"></div><div class="kpi-label">Add to Carts</div><div class="kpi-value">---</div><div class="kpi-change neutral">Meta Ads</div></div>
+      <div class="kpi-card"><div class="kpi-dot blue"></div><div class="kpi-label">Checkout Initiated</div><div class="kpi-value">---</div><div class="kpi-change neutral">Meta Ads</div></div>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
       <div class="kpi-card"><div class="kpi-dot green"></div><div class="kpi-label">Kill-Worthy Ad Sets</div><div class="kpi-value" style="font-size:16px;color:var(--accent-green)">✓ All Clear</div><div class="kpi-note">No ads to kill</div></div>
@@ -2278,12 +2282,39 @@ function renderHomePageMeta(stats) {
     const valueEl = card.querySelector('.kpi-value');
     const changeEl = card.querySelector('.kpi-change');
 
-    if (label === 'Ad Spend') {
-      if (valueEl) valueEl.textContent = fmt(stats.totalSpend);
-      if (changeEl) { changeEl.className = 'kpi-change neutral'; changeEl.textContent = 'Meta Ads'; }
-    } else if (label === 'ROAS') {
-      if (valueEl) valueEl.textContent = stats.roas.toFixed(2);
-      if (changeEl) { changeEl.className = 'kpi-change ' + (stats.roas >= 3 ? 'up' : 'neutral'); changeEl.textContent = stats.roas >= 3 ? '↑ Scaling' : 'Ready'; }
+    switch(label) {
+      case 'Ad Spend':
+        if (valueEl) valueEl.textContent = fmt(stats.totalSpend);
+        if (changeEl) { changeEl.className = 'kpi-change neutral'; changeEl.textContent = 'Meta Ads'; }
+        break;
+      case 'ROAS':
+        if (valueEl) valueEl.textContent = stats.roas.toFixed(2);
+        if (changeEl) { changeEl.className = 'kpi-change ' + (stats.roas >= 3 ? 'up' : 'neutral'); changeEl.textContent = stats.roas >= 3 ? '↑ Scaling' : 'Ready'; }
+        break;
+      case 'Cost Per Result':
+        if (valueEl) valueEl.textContent = stats.costPerResult ? fmt(stats.costPerResult) : '---';
+        if (changeEl) { changeEl.className = 'kpi-change neutral'; changeEl.textContent = 'Meta Ads'; }
+        break;
+      case 'Avg CTR':
+        if (valueEl) valueEl.textContent = fmtPct(stats.avgCTR);
+        if (changeEl) { changeEl.className = 'kpi-change neutral'; changeEl.textContent = 'Meta Ads'; }
+        break;
+      case 'CPM':
+        if (valueEl) valueEl.textContent = fmt(stats.avgCPM);
+        if (changeEl) { changeEl.className = 'kpi-change neutral'; changeEl.textContent = 'Meta Ads'; }
+        break;
+      case 'Impressions':
+        if (valueEl) valueEl.textContent = (stats.totalImpressions || 0).toLocaleString();
+        if (changeEl) { changeEl.className = 'kpi-change neutral'; changeEl.textContent = 'Meta Ads'; }
+        break;
+      case 'Add to Carts':
+        if (valueEl) valueEl.textContent = (stats.addToCart || 0).toLocaleString();
+        if (changeEl) { changeEl.className = 'kpi-change neutral'; changeEl.textContent = 'Meta Ads'; }
+        break;
+      case 'Checkout Initiated':
+        if (valueEl) valueEl.textContent = (stats.checkoutInitiated || 0).toLocaleString();
+        if (changeEl) { changeEl.className = 'kpi-change neutral'; changeEl.textContent = 'Meta Ads'; }
+        break;
     }
   });
 }
