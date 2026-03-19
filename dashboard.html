@@ -1729,11 +1729,18 @@ const dateRangeOptions = [
 ];
 
 function getDateRange(key) {
+  const toISO = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  
   const now = new Date();
-  const today = now.toISOString().substring(0, 10);
-  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-  const yd = yesterday.toISOString().substring(0, 10);
-  const daysAgo = (n) => { const d = new Date(now); d.setDate(now.getDate() - n); return d.toISOString().substring(0, 10); };
+  const today = toISO(now);
+  const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return toISO(d); };
+  const ydDate = new Date(); ydDate.setDate(ydDate.getDate() - 1);
+  const yd = toISO(ydDate);
 
   switch(key) {
     case 'today': return { since: today, until: today, label: 'Today' };
@@ -1832,6 +1839,7 @@ function showPage(id) {
                 <span style="color:var(--text-muted)">→</span>
                 <input type="date" id="custom-until" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:4px;color:var(--text-primary);font-size:11px;flex:1" onchange="setDateRange('custom')">
               </div>
+              <button class="btn btn-secondary btn-sm" style="width:100%;font-size:10px" onclick="location.reload(true)">🔄 Force Hard Refresh</button>
             </div>
           </div>
         `;
