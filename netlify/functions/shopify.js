@@ -65,8 +65,25 @@ exports.handler = async (event) => {
       case 'orders': {
         const limit = event.queryStringParameters?.limit || 50;
         const sinceDate = event.queryStringParameters?.since || thirtyDaysAgo();
-        const url = `${baseUrl}/orders.json?status=any&limit=${limit}&created_at_min=${sinceDate}T00:00:00Z&order=created_at+desc`;
-        const data = await shopifyFetch(url, token);
+        const pageInfo = event.queryStringParameters?.page_info;
+        
+        let url = `${baseUrl}/orders.json?status=any&limit=${limit}&order=created_at+desc`;
+        
+        // If we have page_info, we MUST NOT include other parameters except limit
+        if (pageInfo) {
+          url = `${baseUrl}/orders.json?limit=${limit}&page_info=${pageInfo}`;
+        } else {
+          url += `&created_at_min=${sinceDate}T00:00:00Z`;
+        }
+
+        const res = await shopifyFetchRaw(url, token);
+        const data = await res.json();
+        const linkHeader = res.headers.get('link');
+        
+        const pagination = {
+          next: getCursor(linkHeader, 'next'),
+          prev: getCursor(linkHeader, 'previous')
+        };
         
         const orders = (data.orders || []).map(o => {
           // Extract tracking info from fulfillments
@@ -108,7 +125,7 @@ exports.handler = async (event) => {
           };
         });
 
-        return respond(200, { orders, count: orders.length });
+        return respond(200, { orders, count: orders.length, pagination });
       }
 
       // ─── STATS: aggregated metrics for a date range ───
@@ -256,6 +273,15 @@ function getNextPageUrl(linkHeader) {
   if (!linkHeader) return null;
   const matches = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
   return matches ? matches[1] : null;
+}
+
+function getCursor(linkHeader, rel) {
+  if (!linkHeader) return null;
+  const regex = new RegExp(`<[^?]+\\?([^>]+)>;\\s*rel="${rel}"`);
+  const matches = linkHeader.match(regex);
+  if (!matches) return null;
+  const qs = new URLSearchParams(matches[1]);
+  return qs.get('page_info');
 }
 
 function thirtyDaysAgo() {

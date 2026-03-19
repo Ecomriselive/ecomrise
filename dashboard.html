@@ -807,7 +807,15 @@
         <div class="page-title">Fulfilment</div>
         <div class="page-subtitle">Order fulfilment tracking and analytics</div>
       </div>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;align-items:center">
+        <div style="display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:4px 8px">
+          <label style="font-size:11px;color:var(--text-muted)">Show:</label>
+          <select id="fulfilment-limit-select" onchange="changeFulfillmentLimit(this.value)" style="background:none;border:none;color:var(--text-primary);font-size:11px;font-weight:600;cursor:pointer">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
         <button class="btn btn-secondary btn-sm" onclick="loadShopifyData(true)" style="color:var(--accent-green)">↻ Refresh</button>
       </div>
     </div>
@@ -830,6 +838,14 @@
           <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Loading orders...</td></tr>
         </tbody>
       </table>
+    </div>
+    <!-- Order Pagination Footer -->
+    <div id="fulfilment-pagination" style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:12px;color:var(--text-muted)" id="fulfilment-count-info">Showing 0 orders</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary btn-sm" id="fulfilment-prev-btn" onclick="navigateFulfillment('prev')" disabled>← Previous</button>
+        <button class="btn btn-secondary btn-sm" id="fulfilment-next-btn" onclick="navigateFulfillment('next')" disabled>Next →</button>
+      </div>
     </div>
   </div>
 
@@ -1364,9 +1380,10 @@ const ShopifyAPI = {
     return this.fetch('stats', params);
   },
 
-  async getOrders(limit = 50, since) {
+  async getOrders(limit = 50, since, pageInfo = null) {
     const params = { limit };
-    if (since) params.since = since;
+    if (pageInfo) params.page_info = pageInfo;
+    else if (since) params.since = since;
     return this.fetch('orders', params);
   }
 };
@@ -2102,18 +2119,25 @@ document.addEventListener('click', (e) => {
   }
 });
 
-let isShopifyDataLoading = false;
-async function loadShopifyData(forceRefresh = false) {
+let fulfillmentLimit = 50;
+let fulfillmentPageInfo = null;
+let fulfillmentPagination = { next: null, prev: null };
+
+async function loadShopifyData(forceRefresh = false, pageInfo = null) {
   if (isShopifyDataLoading) return;
   isShopifyDataLoading = true;
   
-  if (forceRefresh) ShopifyAPI.clearCache();
+  if (forceRefresh) {
+    ShopifyAPI.clearCache();
+    fulfillmentPageInfo = null; // Reset pagination on refresh
+  }
+  
   const range = getDateRange(currentDateRange);
   
   try {
     const [stats, ordersData] = await Promise.all([
       ShopifyAPI.getStats(range.since, range.until),
-      ShopifyAPI.getOrders(50, range.since)
+      ShopifyAPI.getOrders(fulfillmentLimit, range.since, pageInfo)
     ]);
 
     if (stats) {
@@ -2124,8 +2148,10 @@ async function loadShopifyData(forceRefresh = false) {
     }
     if (ordersData) {
       liveShopifyOrders = ordersData.orders;
+      fulfillmentPagination = ordersData.pagination || { next: null, prev: null };
       renderShopifyOrders(ordersData.orders);
       renderFulfilmentOrders(ordersData.orders);
+      updateFulfillmentPaginationUI(ordersData.count);
     }
   } catch (err) {
     console.error('Failed to load Shopify data:', err);
@@ -2140,6 +2166,33 @@ async function loadShopifyData(forceRefresh = false) {
   } finally {
     isShopifyDataLoading = false;
   }
+}
+
+// ===== FULFILMENT PAGINATION HANDLERS =====
+function updateFulfillmentPaginationUI(count) {
+  const nextBtn = document.getElementById('fulfilment-next-btn');
+  const prevBtn = document.getElementById('fulfilment-prev-btn');
+  const info = document.getElementById('fulfilment-count-info');
+  
+  if (nextBtn) nextBtn.disabled = !fulfillmentPagination.next;
+  if (prevBtn) prevBtn.disabled = !fulfillmentPagination.prev;
+  if (info) info.textContent = `Showing ${count} orders`;
+}
+
+function navigateFulfillment(direction) {
+  const pageInfo = direction === 'next' ? fulfillmentPagination.next : fulfillmentPagination.prev;
+  if (pageInfo) {
+    loadShopifyData(false, pageInfo);
+    // Scroll table to top
+    const page = document.getElementById('page-fulfilment');
+    if (page) page.scrollTop = 0;
+  }
+}
+
+function changeFulfillmentLimit(limit) {
+  fulfillmentLimit = parseInt(limit);
+  fulfillmentPageInfo = null; // Reset to page 1
+  loadShopifyData(true);
 }
 
 // ===== REFRESH BUTTON HANDLER =====
