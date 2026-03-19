@@ -1725,6 +1725,7 @@ const dateRangeOptions = [
   { key: 'last_30', label: 'Last 30 Days' },
   { key: 'last_60', label: 'Last 60 Days' },
   { key: 'last_90', label: 'Last 90 Days' },
+  { key: 'custom', label: 'Custom Range' },
 ];
 
 function getDateRange(key) {
@@ -1742,6 +1743,10 @@ function getDateRange(key) {
     case 'last_30': return { since: daysAgo(30), until: today, label: 'Last 30 Days' };
     case 'last_60': return { since: daysAgo(60), until: today, label: 'Last 60 Days' };
     case 'last_90': return { since: daysAgo(90), until: today, label: 'Last 90 Days' };
+    case 'custom':
+      const s = document.getElementById('custom-since')?.value || daysAgo(30);
+      const u = document.getElementById('custom-until')?.value || today;
+      return { since: s, until: u, label: 'Custom' };
     default: return { since: daysAgo(30), until: today, label: 'Last 30 Days' };
   }
 }
@@ -1820,6 +1825,14 @@ function showPage(id) {
           </button>
           <div class="date-dropdown">
             ${dateRangeOptions.map(o => `<div class="date-option${o.key === currentDateRange ? ' active' : ''}" data-key="${o.key}" onclick="setDateRange('${o.key}')">${o.label}</div>`).join('')}
+            <div style="padding:10px;border-top:1px solid var(--border);margin-top:5px;display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:600">Custom Range</div>
+              <div style="display:flex;gap:4px;align-items:center">
+                <input type="date" id="custom-since" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:4px;color:var(--text-primary);font-size:11px;flex:1" onchange="setDateRange('custom')">
+                <span style="color:var(--text-muted)">→</span>
+                <input type="date" id="custom-until" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:4px;color:var(--text-primary);font-size:11px;flex:1" onchange="setDateRange('custom')">
+              </div>
+            </div>
           </div>
         `;
         header.appendChild(wrap);
