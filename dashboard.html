@@ -1824,6 +1824,10 @@ function showPage(id) {
       // Add date picker on analytics pages
       if (analyticsPages.includes(id)) {
         const range = getDateRange(currentDateRange);
+        // Persist custom values if they exist
+        const oldSince = document.getElementById('custom-since')?.value;
+        const oldUntil = document.getElementById('custom-until')?.value;
+        
         const wrap = document.createElement('div');
         wrap.className = 'date-picker-wrap injected-date';
         wrap.innerHTML = `
@@ -1844,13 +1848,28 @@ function showPage(id) {
           </div>
         `;
         header.appendChild(wrap);
+
+        // Restore values
+        if (oldSince) document.getElementById('custom-since').value = oldSince;
+        if (oldUntil) document.getElementById('custom-until').value = oldUntil;
+
+        // Update page subtitle date range
+        const sub = header.querySelector('.page-subtitle');
+        if (sub) {
+          const text = sub.textContent;
+          if (text.includes('→')) {
+            sub.textContent = text.replace(/\d{4}-\d{2}-\d{2} → \d{4}-\d{2}-\d{2}/, `${range.since} → ${range.until}`);
+          }
+        }
       }
     }
   }
 
   // Load live data for relevant pages
-  if (id === 'home' || id === 'shopify') loadShopifyData();
-  if (id === 'home' || id === 'meta-ads') loadMetaData();
+  if (analyticsPages.includes(id)) {
+    loadShopifyData();
+    loadMetaData();
+  }
   if (id === 'accounts') renderAccountsPage();
 }
 
@@ -1870,10 +1889,13 @@ async function loadMetaData(forceRefresh = false) {
       liveMetaStats = stats;
       renderMetaKPIs(stats);
       renderHomePageMeta(stats);
+      renderMetaDailyTrends(stats);
     }
     if (campaignsData) {
       liveMetaCampaigns = campaignsData.campaigns;
       renderMetaCampaigns(campaignsData.campaigns);
+      renderCampaignPerformancePage(campaignsData.campaigns);
+      renderAdSetsPage(campaignsData.campaigns);
     }
   } catch (err) {
     console.error('Failed to load Meta data:', err);
@@ -2284,6 +2306,106 @@ function renderShopifyOrders(orders) {
       <td style="color:var(--text-muted)">${fmtDate(o.created_at)}</td>
     </tr>`;
   }).join('');
+}
+
+function renderCampaignPerformancePage(campaigns) {
+  const page = document.getElementById('page-campaigns');
+  if (!page) return;
+  
+  // Render KPI cards on Campaign page
+  const stats = liveMetaStats || { totalSpend:0, totalRevenue:0, roas:0 };
+  const kpis = page.querySelectorAll('.kpi-card');
+  kpis.forEach(card => {
+    const label = card.querySelector('.kpi-label')?.textContent?.trim();
+    const valueEl = card.querySelector('.kpi-value');
+    if (label === 'Total Spend') valueEl.textContent = fmt(stats.totalSpend);
+    if (label === 'Revenue') valueEl.textContent = fmt(stats.totalRevenue);
+    if (label === 'ROAS') valueEl.textContent = stats.roas.toFixed(2);
+    if (label === 'Net Profit') {
+      const p = stats.totalRevenue - stats.totalSpend;
+      valueEl.textContent = fmt(p);
+      valueEl.style.color = p >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    }
+  });
+
+  // Render Campaign Cards
+  const cardsGrid = page.querySelector('.campaign-cards');
+  if (cardsGrid) {
+    cardsGrid.innerHTML = campaigns.map(c => `
+      <div class="campaign-card">
+        <div style="overflow:hidden"><span class="cc-name">${c.name}</span><span class="pill ${c.status === 'ACTIVE' ? 'green' : 'gray'} cc-badge">${capitalize(c.status)}</span></div>
+        <div class="cc-metrics">
+          <div class="cc-metric"><div class="cc-metric-label">Spend</div><div class="cc-metric-value">${fmt(c.spend)}</div></div>
+          <div class="cc-metric"><div class="cc-metric-label">Revenue</div><div class="cc-metric-value">${fmt(c.revenue)}</div></div>
+          <div class="cc-metric"><div class="cc-metric-label">ROAS</div><div class="cc-metric-value">${c.roas.toFixed(2)}</div></div>
+          <div class="cc-metric"><div class="cc-metric-label">Purchases</div><div class="cc-metric-value">${c.purchases}</div></div>
+          <div class="cc-metric"><div class="cc-metric-label">CTR</div><div class="cc-metric-value">${fmtPct(c.ctr)}</div></div>
+          <div class="cc-metric"><div class="cc-metric-label">Profit</div><div class="cc-metric-value ${c.revenue >= c.spend ? 'pos' : 'neg'}">${fmt(c.revenue - c.spend)}</div></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Render Table
+  const tbody = page.querySelector('.data-table tbody');
+  if (tbody) {
+    tbody.innerHTML = campaigns.map(c => `
+      <tr>
+        <td>${c.name}</td>
+        <td>${fmt(c.spend)}</td>
+        <td class="positive">${fmt(c.revenue)}</td>
+        <td>${c.roas.toFixed(2)}</td>
+        <td class="${c.revenue > c.spend ? 'positive' : 'negative'}">${fmt(c.revenue - c.spend)}</td>
+        <td>${c.purchases}</td>
+        <td>${fmtPct(c.ctr)}</td>
+        <td>${fmt(c.cpc)}</td>
+        <td>${capitalize(c.status)}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+function renderAdSetsPage(campaigns) {
+  const page = document.getElementById('page-ad-sets');
+  if (!page) return;
+  // This page is currently campaign-level too
+  const tbody = page.querySelector('#adsets-tbody');
+  if (tbody) {
+    tbody.innerHTML = campaigns.map(c => `
+      <tr>
+        <td>${c.name}</td>
+        <td>${fmt(c.spend)}</td>
+        <td>${fmt(c.revenue)}</td>
+        <td>${c.roas.toFixed(2)}</td>
+        <td>${c.purchases}</td>
+        <td>${fmtPct(c.ctr)}</td>
+        <td>${fmt(c.cpc)}</td>
+        <td>${capitalize(c.status)}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+function renderMetaDailyTrends(stats) {
+  const page = document.getElementById('page-daily-trends');
+  if (!page || !stats.dailyData) return;
+
+  const tbody = page.querySelector('.data-table tbody');
+  if (tbody) {
+    tbody.innerHTML = stats.dailyData.map(d => `
+      <tr>
+        <td>${d.date}</td>
+        <td>${fmt(d.spend)}</td>
+        <td>${fmt(d.revenue)}</td>
+        <td>${d.spend > 0 ? (d.revenue / d.spend).toFixed(2) : '0.00'}</td>
+        <td>${d.purchases}</td>
+        <td>${d.impressions.toLocaleString()}</td>
+        <td>${d.clicks}</td>
+        <td>${d.impressions > 0 ? ((d.clicks / d.impressions) * 100).toFixed(2) + '%' : '0.00%'}</td>
+        <td>${d.clicks > 0 ? fmt(d.spend / d.clicks) : '€0.00'}</td>
+      </tr>
+    `).join('');
+  }
 }
 
 // ===== PANELS =====
