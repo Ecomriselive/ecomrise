@@ -1583,7 +1583,7 @@ function facebookLogin() {
 
   // Use absolute URL to match Meta portal exactly
   const redirectUri = 'https://ecomrise.netlify.app/dashboard.html';
-  const scope = 'ads_read,read_insights';
+  const scope = 'ads_read'; // Simplified to avoid 'Invalid Scope' errors
   const authUrl = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=token`;
 
   const popup = window.open(authUrl, 'meta_login', 'width=600,height=700,scrollbars=yes');
