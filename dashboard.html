@@ -84,7 +84,9 @@
   .page-header { margin-bottom:20px; }
   .page-title { font-size:20px; font-weight:700; }
   .page-subtitle { font-size:12px; color: var(--text-secondary); margin-top:2px; }
-  .page-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; gap:8px; flex-wrap:wrap; }
+  .page-header-row { display:flex; align-items:center; min-height:48px; margin-bottom:12px; gap:12px; width:100%; border-bottom:1px solid var(--border-subtle); padding-bottom:8px; }
+  .page-title { font-size:18px; font-weight:700; color: var(--text-primary); line-height:1.2; }
+  .page-subtitle { font-size:11px; color: var(--text-muted); margin-top:2px; }
   .back-btn { background:none; border:1px solid var(--border); border-radius:6px; color:var(--text-secondary); cursor:pointer; padding:4px 8px; font-size:14px; transition:all 0.15s; display:none; }
   .back-btn:hover { background:var(--bg-secondary); color:var(--text-primary); }
   .date-picker-wrap { position:relative; }
@@ -402,12 +404,16 @@
 
   <!-- ===== HOME PAGE ===== -->
   <div id="page-home" class="page">
-    <div class="greeting-row">
-      <div class="greeting-title" style="display:flex;align-items:baseline;gap:10px">
-        Hello Lloyd 👋
-        <span style="font-size:14px;font-weight:500;color:var(--text-muted)">Store — <span id="home-store-code" style="color:var(--accent-blue);font-weight:600">No store selected</span> <span onclick="renameActiveStore()" style="cursor:pointer;font-size:12px;opacity:0.6" title="Rename store">✏️</span></span>
+    <div class="page-header-row">
+      <div class="title-container">
+        <div class="page-title" style="display:flex;align-items:baseline;gap:10px">
+          Hello Lloyd 👋
+          <span style="font-size:14px;font-weight:500;color:var(--text-muted)">Store — <span id="home-store-code" style="color:var(--accent-blue);font-weight:600">No store selected</span> <span onclick="renameActiveStore()" style="cursor:pointer;font-size:12px;opacity:0.6" title="Rename store">✏️</span></span>
+        </div>
       </div>
-      <div class="conn-badges" style="margin-top:8px" id="home-conn-badges">
+    </div>
+    <div class="greeting-row" style="margin-top:-10px">
+      <div class="conn-badges" id="home-conn-badges">
         <span class="pill gray">✗ Meta Ads</span>
         <span class="pill gray" id="home-shopify-badge">✗ Shopify not connected</span>
         <span class="pill gray">✗ Outlook</span>
@@ -475,7 +481,10 @@
   <!-- ===== ACCOUNTS PAGE ===== -->
   <div id="page-accounts" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">All Accounts</div><div class="page-subtitle" id="accounts-subtitle" style="color:var(--accent-blue)">Manage your connected stores</div></div>
+      <div class="title-container">
+        <div class="page-title">All Accounts</div>
+        <div class="page-subtitle" id="accounts-subtitle" style="color:var(--accent-blue)">Manage your connected stores</div>
+      </div>
       <button class="btn btn-secondary btn-sm" onclick="renderAccountsPage()">↻ Refresh</button>
     </div>
 
@@ -486,7 +495,10 @@
   <!-- ===== SHOPIFY PAGE ===== -->
   <div id="page-shopify" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">Shopify Analytics</div><div class="page-subtitle">Live store data · 2026-02-16 → 2026-03-18</div></div>
+      <div class="title-container">
+        <div class="page-title">Shopify Analytics</div>
+        <div class="page-subtitle">Live store data · 2026-02-16 → 2026-03-18</div>
+      </div>
       <button class="btn btn-secondary btn-sm refresh-shopify-btn" onclick="refreshShopifyData()">↻ Refresh</button>
     </div>
     <div class="shopify-metric-cards">
@@ -576,7 +588,10 @@
   <!-- ===== META ADS PAGE ===== -->
   <div id="page-meta-ads" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">Meta Ads Overview</div><div class="page-subtitle">2026-03-18 → 2026-03-18</div></div>
+      <div class="title-container">
+        <div class="page-title">Meta Ads Overview</div>
+        <div class="page-subtitle">2026-03-18 → 2026-03-18</div>
+      </div>
       <div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm">⊞ Layout</button><button class="btn btn-secondary btn-sm" style="color:var(--accent-green)">↻ Refresh</button><button class="btn btn-primary btn-sm">⬇ Export CSV</button></div>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr);margin-top:12px">
@@ -614,7 +629,10 @@
   <!-- ===== CAMPAIGNS PAGE ===== -->
   <div id="page-campaigns" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">Campaign Performance</div><div class="page-subtitle">2026-03-18 → 2026-03-18 · 5 campaigns</div></div>
+      <div class="title-container">
+        <div class="page-title">Campaign Performance</div>
+        <div class="page-subtitle">2026-03-18 → 2026-03-18 · 5 campaigns</div>
+      </div>
       <button class="btn btn-secondary btn-sm">⊞ Layout</button>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-top:12px">
@@ -659,7 +677,10 @@
   <!-- ===== AD SETS PAGE ===== -->
   <div id="page-ad-sets" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">Ad Set Breakdown</div><div class="page-subtitle">2026-03-18 → 2026-03-18 · 5 ad sets across 5 campaigns</div></div>
+      <div class="title-container">
+        <div class="page-title">Ad Set Breakdown</div>
+        <div class="page-subtitle">2026-03-18 → 2026-03-18 · 5 ad sets across 5 campaigns</div>
+      </div>
       <div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" style="color:var(--accent-green)">↻ Refresh</button><button class="btn btn-secondary btn-sm">⊞ Layout</button></div>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-top:12px">
@@ -692,7 +713,10 @@
   <!-- ===== DAILY TRENDS PAGE ===== -->
   <div id="page-daily-trends" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">Daily Trends</div><div class="page-subtitle">2026-03-18 → 2026-03-18 · 1 days of data</div></div>
+      <div class="title-container">
+        <div class="page-title">Daily Trends</div>
+        <div class="page-subtitle">2026-03-18 → 2026-03-18 · 1 days of data</div>
+      </div>
       <button class="btn btn-secondary btn-sm">⊞ Layout</button>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-top:12px">
@@ -732,7 +756,10 @@
   <!-- ===== WINNING ADS PAGE ===== -->
   <div id="page-winning-ads" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">Winning Ads</div><div class="page-subtitle">Campaigns performing above 3.0x ROAS</div></div>
+      <div class="title-container">
+        <div class="page-title">Winning Ads</div>
+        <div class="page-subtitle">Campaigns performing above 3.0x ROAS</div>
+      </div>
       <span class="pill green">Showing ROAS ≥ 3.0x</span>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-top:12px">
@@ -758,7 +785,10 @@
   <!-- ===== FINANCE PAGE ===== -->
   <div id="page-finance" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">Finance</div><div class="page-subtitle">P&L overview and daily scaling tracker with live Meta & Shopify data</div></div>
+      <div class="title-container">
+        <div class="page-title">Finance</div>
+        <div class="page-subtitle">P&L overview and daily scaling tracker with live Meta & Shopify data</div>
+      </div>
       <button class="btn btn-secondary btn-sm">⊞ Layout</button>
     </div>
     <div style="display:flex;gap:6px;margin:12px 0 8px">
@@ -819,7 +849,10 @@
   <!-- ===== MESSAGES PAGE ===== -->
   <div id="page-messages" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">Messages</div><div class="page-subtitle">Direct messages with your team</div></div>
+      <div class="title-container">
+        <div class="page-title">Messages</div>
+        <div class="page-subtitle">Direct messages with your team</div>
+      </div>
       <div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm">👥 Invite Member</button><button class="btn btn-primary btn-sm">💬 New Message</button></div>
     </div>
     <div class="messages-layout" style="margin-top:14px">
@@ -844,7 +877,12 @@
 
   <!-- ===== LEADERBOARD PAGE ===== -->
   <div id="page-leaderboard" class="page" style="display:none">
-    <div class="page-title" style="margin-bottom:16px">Leaderboard</div>
+    <div class="page-header-row">
+      <div class="title-container">
+        <div class="page-title">Leaderboard</div>
+        <div class="page-subtitle">Top performing stores this month</div>
+      </div>
+    </div>
     <div class="section-card">
       <div class="section-header"><span class="section-title">Top Performers</span></div>
       <table class="data-table">
@@ -860,7 +898,12 @@
 
   <!-- ===== SHARED FILES PAGE ===== -->
   <div id="page-shared-files" class="page" style="display:none">
-    <div class="page-title" style="margin-bottom:16px">Shared Files</div>
+    <div class="page-header-row">
+      <div class="title-container">
+        <div class="page-title">Shared Files</div>
+        <div class="page-subtitle">Files shared with your team</div>
+      </div>
+    </div>
     <div class="section-card">
       <div class="section-header"><span class="section-title">Files</span><button class="btn btn-primary btn-sm" style="margin-left:auto">⬆ Upload</button></div>
       <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:32px;margin-bottom:8px">📁</div><div>No shared files yet. Upload a file to share with your team.</div></div>
@@ -870,7 +913,10 @@
   <!-- ===== AI ASSISTANT PAGE ===== -->
   <div id="page-ai-assistant" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">AI Assistant</div><div class="page-subtitle">Powered by Claude · Ask anything about your ad performance</div></div>
+      <div class="title-container">
+        <div class="page-title">AI Assistant</div>
+        <div class="page-subtitle">Powered by Claude · Ask anything about your ad performance</div>
+      </div>
     </div>
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;height:calc(100vh - 200px);display:flex;flex-direction:column;margin-top:14px">
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
@@ -903,7 +949,10 @@
   <!-- ===== COMPETITORS PAGE ===== -->
   <div id="page-competitors" class="page" style="display:none">
     <div class="page-header-row">
-      <div><div class="page-title">Competitor Intelligence</div><div class="page-subtitle">Paste a competitor URL to analyse their strategy</div></div>
+      <div class="title-container">
+        <div class="page-title">Competitor Intelligence</div>
+        <div class="page-subtitle">Paste a competitor URL to analyse their strategy</div>
+      </div>
     </div>
     <div class="section-card" style="margin-top:14px">
       <div class="section-header"><span class="section-title">Analyse Competitor</span></div>
@@ -919,7 +968,12 @@
 
   <!-- ===== PROFILE PAGE ===== -->
   <div id="page-profile" class="page" style="display:none">
-    <div class="page-title" style="margin-bottom:16px">Profile Settings</div>
+    <div class="page-header-row">
+      <div class="title-container">
+        <div class="page-title">Profile Settings</div>
+        <div class="page-subtitle">Manage your personal account information</div>
+      </div>
+    </div>
     <div class="finance-grid">
       <div class="section-card">
         <div class="section-header"><span class="section-title">Personal Info</span></div>
@@ -1810,16 +1864,27 @@ function showPage(id) {
       // Remove old injected elements
       header.querySelectorAll('.injected-back, .injected-date').forEach(e => e.remove());
 
-      // Add back button (show if there's history)
+      // Add back button container (always exists to keep title aligned)
+      const backWrap = document.createElement('div');
+      backWrap.className = 'back-btn-wrap injected-back';
+      backWrap.style.width = '48px'; // Fixed width to prevent title jumping
+      backWrap.style.display = 'flex';
+      backWrap.style.alignItems = 'center';
+      
       if (pageHistory.length > 1) {
         const backBtn = document.createElement('button');
-        backBtn.className = 'back-btn injected-back';
+        backBtn.className = 'back-btn';
         backBtn.style.display = 'inline-flex';
         backBtn.innerHTML = '←';
         backBtn.title = 'Go back';
         backBtn.onclick = goBack;
-        header.insertBefore(backBtn, header.firstChild);
+        backWrap.appendChild(backBtn);
       }
+      header.insertBefore(backWrap, header.firstChild);
+
+      // Ensure title has flex: 1 to push other elements and stay aligned
+      const titleWrapper = header.querySelector('div:not(.injected-back):not(.injected-date)');
+      if (titleWrapper) titleWrapper.style.flex = '1';
 
       // Add date picker on analytics pages
       if (analyticsPages.includes(id)) {
