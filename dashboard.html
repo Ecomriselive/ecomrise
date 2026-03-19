@@ -598,7 +598,20 @@
         <div class="page-title">Meta Ads Overview</div>
         <div class="page-subtitle">2026-03-18 → 2026-03-18</div>
       </div>
-      <div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm">⊞ Layout</button><button class="btn btn-secondary btn-sm" style="color:var(--accent-green)">↻ Refresh</button><button class="btn btn-primary btn-sm">⬇ Export CSV</button></div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div class="btn-group" id="live-toggle-group-overview">
+          <button class="btn-toggle active" onclick="toggleCampaignLiveFilter('live', this)">Live Only</button>
+          <button class="btn-toggle" onclick="toggleCampaignLiveFilter('all', this)">All</button>
+        </div>
+        <div class="btn-group" id="count-toggle-group-overview">
+          <button class="btn-toggle active" onclick="toggleCampaignCountLimit(5, this)">Show 5</button>
+          <button class="btn-toggle" onclick="toggleCampaignCountLimit(10, this)">10</button>
+          <button class="btn-toggle" onclick="toggleCampaignCountLimit(0, this)">All</button>
+        </div>
+        <button class="btn btn-secondary btn-sm">⊞ Layout</button>
+        <button class="btn btn-secondary btn-sm" style="color:var(--accent-green)">↻ Refresh</button>
+        <button class="btn btn-primary btn-sm">⬇ Export CSV</button>
+      </div>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr);margin-top:12px">
       <div class="kpi-card"><div class="kpi-dot blue"></div><div class="kpi-label">Spend</div><div class="kpi-value" style="font-size:18px">€0.00</div></div>
@@ -1868,16 +1881,34 @@ let campaignCountLimit = 5;      // 5, 10, or 0 (all)
 
 function toggleCampaignLiveFilter(val, btn) {
   campaignLiveFilter = val;
+  // Update ALL toggle groups for live/all
+  document.querySelectorAll('#live-toggle-group .btn-toggle, #live-toggle-group-overview .btn-toggle').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(val.toLowerCase()));
+  });
+  // Simple active class for the clicked button
   btn.parentElement.querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if (lastMetaData) renderCampaignPerformancePage(lastMetaData.campaigns);
+
+  if (lastMetaData) {
+    renderCampaignPerformancePage(lastMetaData.campaigns);
+    renderMetaCampaigns(lastMetaData.campaigns);
+  }
 }
 
 function toggleCampaignCountLimit(val, btn) {
   campaignCountLimit = val;
+  // Update ALL toggle groups for count
+  document.querySelectorAll('#count-toggle-group .btn-toggle, #count-toggle-group-overview .btn-toggle').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === val || (b.textContent === 'All' && val === 0) || (b.textContent.includes(val) && val !== 0));
+  });
+  // Simple active class for the clicked button
   btn.parentElement.querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if (lastMetaData) renderCampaignPerformancePage(lastMetaData.campaigns);
+
+  if (lastMetaData) {
+    renderCampaignPerformancePage(lastMetaData.campaigns);
+    renderMetaCampaigns(lastMetaData.campaigns);
+  }
 }
 
 function showPage(id) {
@@ -2200,10 +2231,26 @@ function renderMetaCampaigns(campaigns) {
   const tbody = document.querySelector('#page-meta-ads .data-table tbody');
   if (!tbody) return;
 
-  // Only show LIVE (ACTIVE) campaigns
-  const liveCampaigns = campaigns.filter(c => c.status === 'ACTIVE' || c.effective_status === 'ACTIVE');
+  // 1. Sort: Active campaigns first, then by spend
+  const sorted = [...campaigns].sort((a, b) => {
+    const activeA = (a.status === 'ACTIVE' || a.effective_status === 'ACTIVE') ? 1 : 0;
+    const activeB = (b.status === 'ACTIVE' || b.effective_status === 'ACTIVE') ? 1 : 0;
+    if (activeA !== activeB) return activeB - activeA;
+    return b.spend - a.spend;
+  });
 
-  tbody.innerHTML = liveCampaigns.map(c => `
+  // 2. Filter based on toggle
+  let filtered = sorted;
+  if (campaignLiveFilter === 'live') {
+    filtered = filtered.filter(c => c.status === 'ACTIVE' || c.effective_status === 'ACTIVE');
+  }
+
+  // 3. Limit based on count
+  if (campaignCountLimit > 0) {
+    filtered = filtered.slice(0, campaignCountLimit);
+  }
+
+  tbody.innerHTML = filtered.map(c => `
     <tr>
       <td>
         <div style="font-weight:600;font-size:12px">${c.name}</div>
