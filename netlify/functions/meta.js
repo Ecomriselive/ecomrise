@@ -207,7 +207,11 @@ async function metaFetch(url) {
 function getActionValue(actions, actionType) {
   if (!actions || !Array.isArray(actions)) return 0;
   const action = actions.find(a => a.action_type === actionType);
-  return action ? action.value : 0;
+  if (!action) return 0;
+  // For revenue/value, Meta uses the 'value' key
+  if (action.value !== undefined) return parseFloat(action.value);
+  // For counts (purchases), Meta uses attribution windows like '7d_click' or '1d_view'
+  return parseFloat(action['7d_click'] || action['1d_view'] || action.value || 0);
 }
 
 function thirtyDaysAgo() {

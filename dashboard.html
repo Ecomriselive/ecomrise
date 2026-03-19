@@ -676,7 +676,7 @@
     </div>
     <div class="section-card">
       <table class="data-table" style="font-size:11px">
-        <thead><tr><th>Ad Set</th><th>Spend</th><th>Revenue</th><th>ROAS</th><th>Purch.</th><th>ATC</th><th>CHK</th><th>LP Views</th><th>Impr.</th><th>CTR</th><th>CPC</th><th>Status</th></tr></thead>
+        <thead><tr><th>Campaign</th><th>Spend</th><th>Revenue</th><th>ROAS</th><th>Purch.</th><th>CTR</th><th>CPC</th><th>Status</th></tr></thead>
         <tbody id="adsets-tbody">
           <tr style="background:var(--bg-card-hover)"><td colspan="12"><div style="display:flex;align-items:center;gap:8px;padding:4px 0"><span style="cursor:pointer;color:var(--accent-blue)" onclick="toggleAdSet(this)">▼</span><strong>14/03/26 LARA SANDALS</strong><span style="font-size:10px;color:var(--text-muted);margin-left:auto">1 ad set · €1.46 spend · 0.000 ROAS</span></div></td></tr>
           <tr><td style="padding-left:28px">14/03/26 LARA SANDALS</td><td>€1.46</td><td>€0.00</td><td>0.00</td><td>0</td><td>0</td><td>0</td><td>0</td><td>30</td><td class="negative">0.00%</td><td style="color:var(--accent-green)">€2.00</td><td>—</td></tr>
@@ -2002,7 +2002,7 @@ function renderMetaKPIs(stats) {
     switch (label) {
       case 'Total Spend':
         if (valueEl) valueEl.textContent = fmt(stats.totalSpend);
-        if (changeEl) changeEl.textContent = `${stats.totalImpressions.toLocaleString()} impressions`;
+        if (changeEl) changeEl.textContent = `${stats.totalImpressions.toLocaleString()} imp`;
         break;
       case 'ROAS':
         if (valueEl) valueEl.textContent = stats.roas.toFixed(2) + 'x';
@@ -2013,16 +2013,16 @@ function renderMetaKPIs(stats) {
         if (changeEl) changeEl.textContent = `${stats.totalPurchases} purchases`;
         break;
       case 'CPC (Avg)':
-        if (valueEl) valueEl.textContent = fmt(stats.avgCPC);
+        if (valueEl) valueEl.textContent = stats.avgCPC ? fmt(stats.avgCPC) : '€0.00';
         if (changeEl) changeEl.textContent = `${fmtPct(stats.avgCTR)} CTR`;
         break;
       case 'CPM (Avg)':
-        if (valueEl) valueEl.textContent = fmt(stats.avgCPM);
-        if (changeEl) changeEl.textContent = 'Cost per 1k impressions';
+        if (valueEl) valueEl.textContent = stats.avgCPM ? fmt(stats.avgCPM) : '€0.00';
+        if (changeEl) changeEl.textContent = 'Per 1k impressions';
         break;
       case 'Reach':
         if (valueEl) valueEl.textContent = stats.totalReach.toLocaleString();
-        if (changeEl) changeEl.textContent = `${stats.frequency.toFixed(2)}x frequency`;
+        if (changeEl) changeEl.textContent = `${stats.frequency.toFixed(2)}x freq`;
         break;
     }
   });
@@ -2054,13 +2054,15 @@ function renderMetaCampaigns(campaigns) {
     <tr>
       <td>
         <div style="font-weight:600;font-size:12px">${c.name}</div>
-        <div style="font-size:10px;color:var(--text-muted)">${capitalize(c.objective)} • ${capitalize(c.status)}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${capitalize(c.objective)}</div>
       </td>
       <td>${fmt(c.spend)}</td>
-      <td>${c.roas.toFixed(2)}x</td>
       <td class="positive">${fmt(c.revenue)}</td>
+      <td>${c.roas.toFixed(2)}x</td>
       <td>${c.purchases}</td>
-      <td>${fmt(c.costPerPurchase)}</td>
+      <td>${fmtPct(c.ctr)}</td>
+      <td>${fmt(c.cpc)}</td>
+      <td>${capitalize(c.status)}</td>
     </tr>
   `).join('');
 }
