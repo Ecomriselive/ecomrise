@@ -459,7 +459,7 @@
     </div>
 
     <div class="section-card">
-      <div class="section-header"><span class="section-title">Campaign Overview</span> <span style="font-size:10px;color:var(--accent-blue)">ℹ</span></div>
+      <div class="section-header"><span class="section-title">Live Campaign Overview</span> <span style="font-size:10px;color:var(--accent-blue)">ℹ</span></div>
       <table class="data-table" style="font-size:11px">
         <thead><tr><th>Campaign</th><th>Spend</th><th>Revenue</th><th>ROAS</th><th>Profit</th><th>Purchases</th><th>ATC</th><th>Clicks</th><th>CPC</th><th>CTR</th></tr></thead>
         <tbody>
@@ -2154,7 +2154,10 @@ function renderMetaCampaigns(campaigns) {
   const tbody = document.querySelector('#page-meta-ads .data-table tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = campaigns.map(c => `
+  // Only show LIVE (ACTIVE) campaigns
+  const liveCampaigns = campaigns.filter(c => c.effective_status === 'ACTIVE');
+
+  tbody.innerHTML = liveCampaigns.map(c => `
     <tr>
       <td>
         <div style="font-weight:600;font-size:12px">${c.name}</div>
@@ -2395,11 +2398,12 @@ function renderCampaignPerformancePage(campaigns) {
   // Render Campaign Cards
   const cardsGrid = page.querySelector('.campaign-cards');
   if (cardsGrid) {
-    cardsGrid.innerHTML = campaigns.map(c => `
+    const liveCampaigns = campaigns.filter(c => c.status === 'ACTIVE');
+    cardsGrid.innerHTML = liveCampaigns.map(c => `
       <div class="campaign-card">
         <div style="overflow:hidden">
           <div style="font-weight:600;font-size:12px;margin-bottom:4px">${c.name}</div>
-          <span class="pill ${c.status === 'ACTIVE' ? 'green' : 'gray'}" style="font-size:9px">${capitalize(c.status)}</span>
+          <span class="pill green" style="font-size:9px">Active</span>
         </div>
         <div class="cc-metrics">
           <div class="cc-metric"><div class="cc-metric-label">Spend</div><div class="cc-metric-value">${fmt(c.spend)}</div></div>
@@ -2416,7 +2420,8 @@ function renderCampaignPerformancePage(campaigns) {
   // Render Table
   const tbody = page.querySelector('.data-table tbody');
   if (tbody) {
-    tbody.innerHTML = campaigns.map(c => `
+    const liveCampaigns = campaigns.filter(c => c.status === 'ACTIVE');
+    tbody.innerHTML = liveCampaigns.map(c => `
       <tr>
         <td>
           <div style="font-weight:600;font-size:12px">${c.name}</div>
@@ -2429,7 +2434,7 @@ function renderCampaignPerformancePage(campaigns) {
         <td>${c.purchases}</td>
         <td>${fmtPct(c.ctr)}</td>
         <td>${fmt(c.cpc)}</td>
-        <td>${capitalize(c.status)}</td>
+        <td><span class="pill green" style="font-size:9px">Active</span></td>
       </tr>
     `).join('');
   }
@@ -2438,10 +2443,12 @@ function renderCampaignPerformancePage(campaigns) {
 function renderAdSetsPage(campaigns) {
   const page = document.getElementById('page-ad-sets');
   if (!page) return;
-  // This page is currently campaign-level too
+  
+  const liveCampaigns = campaigns.filter(c => c.status === 'ACTIVE');
+  
   const tbody = page.querySelector('#adsets-tbody');
   if (tbody) {
-    tbody.innerHTML = campaigns.map(c => `
+    tbody.innerHTML = liveCampaigns.map(c => `
       <tr>
         <td>
           <div style="font-weight:600;font-size:12px">${c.name}</div>
