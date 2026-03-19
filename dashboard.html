@@ -676,7 +676,7 @@
     </div>
     <div class="section-card">
       <table class="data-table" style="font-size:11px">
-        <thead><tr><th>Campaign</th><th>Spend</th><th>Revenue</th><th>ROAS</th><th>Purch.</th><th>CTR</th><th>CPC</th><th>Status</th></tr></thead>
+        <thead><tr><th>Campaign</th><th>Daily Spend</th><th>Revenue</th><th>ROAS</th><th>Purchases</th><th>CTR</th><th>CPC</th><th>Status</th></tr></thead>
         <tbody id="adsets-tbody">
           <tr style="background:var(--bg-card-hover)"><td colspan="12"><div style="display:flex;align-items:center;gap:8px;padding:4px 0"><span style="cursor:pointer;color:var(--accent-blue)" onclick="toggleAdSet(this)">▼</span><strong>14/03/26 LARA SANDALS</strong><span style="font-size:10px;color:var(--text-muted);margin-left:auto">1 ad set · €1.46 spend · 0.000 ROAS</span></div></td></tr>
           <tr><td style="padding-left:28px">14/03/26 LARA SANDALS</td><td>€1.46</td><td>€0.00</td><td>0.00</td><td>0</td><td>0</td><td>0</td><td>0</td><td>30</td><td class="negative">0.00%</td><td style="color:var(--accent-green)">€2.00</td><td>—</td></tr>
@@ -2058,7 +2058,7 @@ function renderMetaCampaigns(campaigns) {
       </td>
       <td>${fmt(c.spend)}</td>
       <td class="positive">${fmt(c.revenue)}</td>
-      <td>${c.roas.toFixed(2)}x</td>
+      <td>${c.roas.toFixed(2)}</td>
       <td>${c.purchases}</td>
       <td>${fmtPct(c.ctr)}</td>
       <td>${fmt(c.cpc)}</td>
