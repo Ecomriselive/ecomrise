@@ -795,62 +795,10 @@
         <div class="page-title">Finance</div>
         <div class="page-subtitle">P&L overview and daily scaling tracker with live Meta & Shopify data</div>
       </div>
-      <button class="btn btn-secondary btn-sm">⊞ Layout</button>
     </div>
-    <div style="display:flex;gap:6px;margin:12px 0 8px">
-      <div class="filter-tabs"><div class="filter-tab active">Profit & Loss</div><div class="filter-tab">Daily Data & Scaling</div></div>
-    </div>
-    <div class="date-pills">
-      <div class="date-pill">Today</div><div class="date-pill">Yesterday</div><div class="date-pill">Last 3d</div><div class="date-pill">Last 7d</div><div class="date-pill">Last 14d</div><div class="date-pill">Last 30d</div><div class="date-pill">WTD</div><div class="date-pill active">This month</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
-      <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">FROM</div><input type="date" value="2026-03-01" style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:12px"></div>
-      <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">TO</div><input type="date" value="2026-03-18" style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:12px"></div>
-      <button class="btn btn-primary btn-sm" style="margin-top:16px">Apply</button>
-      <span style="font-size:11px;color:var(--text-muted);margin-top:16px">Revenue & Ad Spend auto-filled from Shopify + Meta</span>
-    </div>
-    <div class="finance-grid">
-      <div class="section-card">
-        <div class="section-header"><span class="section-title">Inputs — 2026-03-01 → 2026-03-18 (18d)</span></div>
-        <div style="padding:14px">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-            <div class="finance-input-group"><label>Gross Revenue (€) • Shopify</label><input type="number" value="0" placeholder="0"></div>
-            <div class="finance-input-group"><label>Ad Spend (€) • Meta</label><input type="number" value="0" placeholder="0"></div>
-            <div class="finance-input-group"><label>COG % of Revenue</label><input type="number" value="35" placeholder="35"></div>
-            <div class="finance-input-group"><label>Shipping Cost (€)</label><input type="number" value="0" placeholder="0"></div>
-            <div class="finance-input-group"><label>Transaction Fees (€)</label><input type="number" value="0" placeholder="0"></div>
-            <div class="finance-input-group"><label>App / Platform Fees (€)</label><input type="number" value="0" placeholder="0"></div>
-            <div class="finance-input-group"><label>Other Costs (€)</label><input type="number" value="0" placeholder="0"></div>
-            <div class="finance-input-group"><label>VAT % <span class="pill orange" style="font-size:9px;padding:1px 5px">TAX ON</span></label><input type="number" value="21" placeholder="21"></div>
-          </div>
-          <div class="finance-roas">
-            <div class="finance-roas-card bad"><div class="finance-roas-val" style="color:var(--accent-red)">0.00x</div><div class="finance-roas-label">ROAS</div></div>
-            <div class="finance-roas-card bad"><div class="finance-roas-val" style="color:var(--accent-red)">0.00x</div><div class="finance-roas-label">Net Margin</div></div>
-          </div>
-        </div>
-      </div>
-      <div class="section-card">
-        <div class="section-header"><span class="section-title">P&L — 2026-03-01 → 2026-03-18 (18d)</span></div>
-        <div style="padding:14px">
-          <div class="pnl-table">
-            <div class="pnl-row"><span>Gross Revenue</span><span class="pnl-val">€0.00</span></div>
-            <div class="pnl-row"><span>VAT (21%)</span><span class="pnl-val red">-€0.00</span></div>
-            <div class="pnl-row"><span>Revenue excl. VAT</span><span class="pnl-val">€0.00</span></div>
-            <div class="pnl-row"><span>Cost of Goods (35%)</span><span class="pnl-val red">-€0.00</span></div>
-            <div class="pnl-row"><span>Gross Profit</span><span class="pnl-val">€0.00</span></div>
-            <div class="pnl-row"><span>Gross Margin</span><span class="pnl-val">0.0%</span></div>
-            <div class="pnl-row" style="margin-top:8px"><span>Ad Spend</span><span class="pnl-val red">-€0.00</span></div>
-            <div class="pnl-row"><span>Shipping Cost</span><span class="pnl-val red">-€0.00</span></div>
-            <div class="pnl-row"><span>Transaction Fees</span><span class="pnl-val red">-€0.00</span></div>
-            <div class="pnl-row"><span>App / Platform Fees</span><span class="pnl-val red">-€0.00</span></div>
-            <div class="pnl-row"><span>Other Costs</span><span class="pnl-val red">-€0.00</span></div>
-            <div class="pnl-row total"><span>Net Profit</span><span class="pnl-val green">€0.00</span></div>
-            <div class="pnl-row"><span>Net Margin</span><span class="pnl-val">0.0%</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Custom tables will go here -->
   </div>
+
 
   <!-- ===== MESSAGES PAGE ===== -->
   <div id="page-messages" class="page" style="display:none">
