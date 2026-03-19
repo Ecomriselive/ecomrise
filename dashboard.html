@@ -2093,7 +2093,7 @@ function renderMetaCampaigns(campaigns) {
     <tr>
       <td>
         <div style="font-weight:600;font-size:12px">${c.name}</div>
-        <div style="font-size:10px;color:var(--text-muted)">${capitalize(c.objective)}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${capitalize(c.objective)}</div>
       </td>
       <td>${fmt(c.spend)}</td>
       <td class="positive">${fmt(c.revenue)}</td>
@@ -2332,7 +2332,10 @@ function renderCampaignPerformancePage(campaigns) {
   if (cardsGrid) {
     cardsGrid.innerHTML = campaigns.map(c => `
       <div class="campaign-card">
-        <div style="overflow:hidden"><span class="cc-name">${c.name}</span><span class="pill ${c.status === 'ACTIVE' ? 'green' : 'gray'} cc-badge">${capitalize(c.status)}</span></div>
+        <div style="overflow:hidden">
+          <div style="font-weight:600;font-size:12px;margin-bottom:4px">${c.name}</div>
+          <span class="pill ${c.status === 'ACTIVE' ? 'green' : 'gray'}" style="font-size:9px">${capitalize(c.status)}</span>
+        </div>
         <div class="cc-metrics">
           <div class="cc-metric"><div class="cc-metric-label">Spend</div><div class="cc-metric-value">${fmt(c.spend)}</div></div>
           <div class="cc-metric"><div class="cc-metric-label">Revenue</div><div class="cc-metric-value">${fmt(c.revenue)}</div></div>
@@ -2350,7 +2353,10 @@ function renderCampaignPerformancePage(campaigns) {
   if (tbody) {
     tbody.innerHTML = campaigns.map(c => `
       <tr>
-        <td>${c.name}</td>
+        <td>
+          <div style="font-weight:600;font-size:12px">${c.name}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${capitalize(c.objective)}</div>
+        </td>
         <td>${fmt(c.spend)}</td>
         <td class="positive">${fmt(c.revenue)}</td>
         <td>${c.roas.toFixed(2)}</td>
@@ -2372,7 +2378,10 @@ function renderAdSetsPage(campaigns) {
   if (tbody) {
     tbody.innerHTML = campaigns.map(c => `
       <tr>
-        <td>${c.name}</td>
+        <td>
+          <div style="font-weight:600;font-size:12px">${c.name}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${capitalize(c.status)}</div>
+        </td>
         <td>${fmt(c.spend)}</td>
         <td>${fmt(c.revenue)}</td>
         <td>${c.roas.toFixed(2)}</td>
