@@ -1210,11 +1210,67 @@ function getActiveStore() {
 }
 function setActiveStore(id) {
   localStorage.setItem('ecr_active_store', id);
+  
+  // Clear ALL caches
   ShopifyAPI.clearCache();
+  MetaAdsAPI.clearCache();
+  
+  // Reset ALL global data variables
+  liveShopifyStats = null;
+  liveShopifyOrders = null;
+  shopifyDataLoaded = false;
+  lastMetaData = null;
+  liveMetaStats = null;
+  liveMetaCampaigns = [];
+  
+  // Clear all data tables so stale data doesn't show
+  clearAllDataUI();
+  
+  // Update UI elements
   updateShopifyBadge();
   updateTopbarStoreName();
   renderAccountsPage();
+  
+  // Navigate to home and reload all data for the new store
   showPage('home');
+}
+
+// Clear all data-driven UI so stale data from previous store doesn't show
+function clearAllDataUI() {
+  // Reset KPI cards to loading state
+  document.querySelectorAll('#page-home .kpi-value').forEach(el => { el.textContent = '---'; });
+  document.querySelectorAll('#page-home .kpi-change').forEach(el => { el.textContent = ''; });
+  
+  // Clear Home campaign overview table
+  const homeTbody = document.querySelector('#page-home .section-card .data-table tbody');
+  if (homeTbody) homeTbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">Loading...</td></tr>';
+  
+  // Clear Meta Ads table
+  const metaTbody = document.querySelector('#page-meta-ads .data-table tbody');
+  if (metaTbody) metaTbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Loading...</td></tr>';
+  
+  // Clear Meta KPI cards
+  document.querySelectorAll('#page-meta-ads .kpi-value').forEach(el => { el.textContent = '---'; });
+  
+  // Clear Campaigns table
+  const campTbody = document.querySelector('#page-campaigns .data-table tbody');
+  if (campTbody) campTbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">Loading...</td></tr>';
+  
+  // Clear Ad Sets table
+  const adsetTbody = document.getElementById('adsets-tbody');
+  if (adsetTbody) adsetTbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:20px">Loading...</td></tr>';
+  
+  // Clear Shopify orders table
+  const shopifyTbody = document.getElementById('shopify-orders-tbody');
+  if (shopifyTbody) shopifyTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Loading...</td></tr>';
+  
+  // Clear Fulfilment orders table
+  const fulfilTbody = document.getElementById('fulfilment-orders-tbody');
+  if (fulfilTbody) fulfilTbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Loading...</td></tr>';
+  
+  // Clear Winning Ads
+  const winningKpis = document.querySelectorAll('#page-winning-ads .kpi-value');
+  winningKpis.forEach(el => { el.textContent = '---'; });
 }
 function updateTopbarStoreName() {
   const s = getActiveStore();
@@ -1968,7 +2024,19 @@ function showPage(id) {
 // ===== LOAD LIVE META ADS DATA =====
 async function loadMetaData(forceRefresh = false) {
   if (forceRefresh) MetaAdsAPI.clearCache();
-  if (!isMetaConnected()) return;
+  if (!isMetaConnected()) {
+    // Show proper empty state for all Meta-related UI
+    const metaTbody = document.querySelector('#page-meta-ads .data-table tbody');
+    if (metaTbody) metaTbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Connect Meta Ads to see campaign data</td></tr>';
+    document.querySelectorAll('#page-meta-ads .kpi-value').forEach(el => { el.textContent = '---'; });
+    const homeTbody = document.querySelector('#page-home .section-card .data-table tbody');
+    if (homeTbody) homeTbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">Connect Meta Ads to see live campaign data</td></tr>';
+    const campTbody = document.querySelector('#page-campaigns .data-table tbody');
+    if (campTbody) campTbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px">Connect Meta Ads to see campaign data</td></tr>';
+    const adsetTbody = document.getElementById('adsets-tbody');
+    if (adsetTbody) adsetTbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:20px">Connect Meta Ads to see ad set data</td></tr>';
+    return;
+  }
   const range = getDateRange(currentDateRange);
 
   try {
