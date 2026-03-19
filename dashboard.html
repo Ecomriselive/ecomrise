@@ -580,11 +580,11 @@
       <div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm">⊞ Layout</button><button class="btn btn-secondary btn-sm" style="color:var(--accent-green)">↻ Refresh</button><button class="btn btn-primary btn-sm">⬇ Export CSV</button></div>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr);margin-top:12px">
-      <div class="kpi-card"><div class="kpi-dot blue"></div><div class="kpi-label">Spend</div><div class="kpi-value" style="font-size:18px">€4.03</div></div>
+      <div class="kpi-card"><div class="kpi-dot blue"></div><div class="kpi-label">Spend</div><div class="kpi-value" style="font-size:18px">€0.00</div></div>
       <div class="kpi-card"><div class="kpi-dot green"></div><div class="kpi-label">Revenue</div><div class="kpi-value" style="font-size:18px">€0.00</div></div>
-      <div class="kpi-card"><div class="kpi-dot orange"></div><div class="kpi-label">ROAS</div><div class="kpi-value" style="font-size:18px">0.00</div></div>
-      <div class="kpi-card"><div class="kpi-dot red"></div><div class="kpi-label">COG (est.)</div><div class="kpi-value" style="font-size:18px">€0.00</div></div>
-      <div class="kpi-card"><div class="kpi-dot red"></div><div class="kpi-label">Profit</div><div class="kpi-value" style="font-size:18px;color:var(--accent-red)">€-4.03</div></div>
+      <div class="kpi-card"><div class="kpi-dot orange"></div><div class="kpi-label">Average ROAS</div><div class="kpi-value" style="font-size:18px">0.00</div></div>
+      <div class="kpi-card"><div class="kpi-dot blue"></div><div class="kpi-label">Avg CPC</div><div class="kpi-value" style="font-size:18px">€0.00</div></div>
+      <div class="kpi-card"><div class="kpi-dot orange"></div><div class="kpi-label">Avg CTR %</div><div class="kpi-value" style="font-size:18px">0.0%</div></div>
       <div class="kpi-card"><div class="kpi-dot green"></div><div class="kpi-label">Orders</div><div class="kpi-value" style="font-size:18px">0</div></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin:12px 0">
@@ -2048,18 +2048,17 @@ function renderMetaKPIs(stats) {
       case 'Spend':
         if (valueEl) valueEl.textContent = fmt(stats.totalSpend);
         break;
-      case 'ROAS':
+      case 'Average ROAS':
         if (valueEl) valueEl.textContent = stats.roas.toFixed(2);
         break;
       case 'Revenue':
         if (valueEl) valueEl.textContent = fmt(stats.totalRevenue);
         break;
-      case 'Profit':
-        const profit = stats.totalRevenue - stats.totalSpend;
-        if (valueEl) {
-          valueEl.textContent = fmt(profit);
-          valueEl.style.color = profit >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-        }
+      case 'Avg CPC':
+        if (valueEl) valueEl.textContent = stats.avgCPC ? fmt(stats.avgCPC) : '€0.00';
+        break;
+      case 'Avg CTR %':
+        if (valueEl) valueEl.textContent = fmtPct(stats.avgCTR);
         break;
       case 'Orders':
         if (valueEl) valueEl.textContent = stats.totalPurchases;
