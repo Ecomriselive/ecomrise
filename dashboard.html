@@ -1100,74 +1100,56 @@
 
 <!-- ===== META ADS CONNECT MODAL ===== -->
 <div id="metaModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:9999;justify-content:center;align-items:center">
-  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:22px;max-width:480px;width:95%;max-height:90vh;overflow-y:auto;position:relative">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-size:16px;font-weight:700">📊 Connect Meta Ads (Manual)</div>
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;max-width:440px;width:90%;max-height:85vh;overflow-y:auto;position:relative">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700">📊 Connect Meta Ads</div>
       <button class="modal-close" onclick="closeMetaModal()">✕</button>
     </div>
 
-    <!-- Security Notice -->
-    <div style="background:rgba(63,185,80,0.05);border:1px solid rgba(63,185,80,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--accent-green);margin-bottom:16px;line-height:1.4">
-      🔒 <strong>Privacy First:</strong> Your Meta token is stored <strong>only in your browser</strong>. Ecom Rise has read-only access to view your ad data. No "Business Partner" account is required.
+    <div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.2);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--accent-green);margin-bottom:12px">
+      🔒 <strong>Read-only access</strong> — Ecom Rise can only VIEW your ad data. It cannot create, edit, pause, or delete anything.
     </div>
 
-    <div id="meta-modal-status" style="margin-bottom:16px"></div>
+    <div id="meta-modal-status" style="margin-bottom:12px"></div>
 
-    <!-- Manual Token Input (Primary) -->
-    <div style="margin-bottom:20px">
-      <label style="font-size:12px;font-weight:700;margin-bottom:6px;display:block;color:var(--text-primary)">1. Paste Your Access Token</label>
-      <div style="display:flex;gap:8px">
-        <input type="password" id="meta-token-input" placeholder="EAA..." style="flex:1;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text-primary);font-size:14px">
-        <button class="btn btn-primary" onclick="testMetaConnection()" id="meta-test-btn" style="white-space:nowrap">🔗 Connect</button>
+    <!-- Facebook Login Button (Primary) -->
+    <button onclick="facebookLogin()" id="meta-fb-login-btn" style="width:100%;padding:12px;background:#1877F2;color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.15s">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      Login with Facebook
+    </button>
+    <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:6px">One-click connect (no developer account needed)</div>
+
+    <!-- Ad Account Picker -->
+    <div id="meta-account-picker" style="display:none;margin-top:12px">
+      <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block">Select Ad Account</label>
+      <select id="meta-account-select" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%"></select>
+      <button class="btn btn-primary btn-sm" onclick="saveSelectedMetaAccount()" style="margin-top:8px;width:100%;justify-content:center">✓ Connect this account</button>
+    </div>
+
+    <!-- Manual token fallback (collapsed) -->
+    <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+      <div onclick="document.getElementById('meta-manual-section').style.display = document.getElementById('meta-manual-section').style.display === 'none' ? 'block' : 'none'" style="font-size:10px;color:var(--text-muted);cursor:pointer">
+        ▸ Or use a manual access token
       </div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Paste the token from the Graph API Explorer (info below)</div>
-    </div>
-
-    <!-- Ad Account Picker (Hidden until token tested) -->
-    <div id="meta-account-picker" style="display:none;margin-bottom:24px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px">
-      <label style="font-size:13px;font-weight:700;margin-bottom:8px;display:block;color:var(--text-primary)">2. Select Your Ad Account</label>
-      <select id="meta-account-select" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text-primary);font-size:14px;width:100%;margin-bottom:12px"></select>
-      <button class="btn btn-primary" onclick="saveSelectedMetaAccount()" style="width:100%;justify-content:center;height:40px">✓ Complete Connection</button>
-    </div>
-
-    <!-- Guide: How to get a token -->
-    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:16px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-primary)">How to get your Access Token (takes 30s):</div>
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div style="display:flex;gap:10px;font-size:12px;line-height:1.4">
-          <span style="background:var(--border);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</span>
-          <div>Go to the <strong><a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color:var(--accent-blue);text-decoration:none">Graph API Explorer</a></strong> (log in if needed).</div>
-        </div>
-        <div style="display:flex;gap:10px;font-size:12px;line-height:1.4">
-          <span style="background:var(--border);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</span>
-          <div>On the right side, under <strong>Permissions</strong>, click **Add a Permission** and select:
-            <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
-              <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;font-size:10px">ads_read</code>
-              <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;font-size:10px">read_insights</code>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;font-size:12px;line-height:1.4">
-          <span style="background:var(--border);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</span>
-          <div>Click <strong>Generate Access Token</strong> (blue button) and copy the long string of letters at the top.</div>
-        </div>
+      <div id="meta-manual-section" style="display:none;margin-top:8px">
+        <input type="password" id="meta-token-input" placeholder="Paste Meta access token" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;width:100%">
+        <button class="btn btn-secondary btn-sm" onclick="testMetaConnection()" id="meta-test-btn" style="margin-top:6px;width:100%;justify-content:center">🔗 Test Token</button>
       </div>
     </div>
 
-    <!-- Already Connected Status -->
-    <div id="meta-connected-info" style="margin-top:20px;display:none">
-      <div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.2);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px">
-        <span style="background:var(--accent-green);color:black;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:12px">✓</span>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:var(--accent-green)" id="meta-user-name">Live Connection</div>
-          <div style="font-size:12px;color:var(--text-muted)" id="meta-account-name"></div>
+    <div id="meta-connected-info" style="margin-top:12px;display:none">
+      <div style="background:#1a3a1a;border:1px solid #2ea04326;border-radius:6px;padding:10px;display:flex;align-items:center;gap:8px">
+        <span style="color:var(--accent-green);font-size:16px">✓</span>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--accent-green)" id="meta-user-name">Connected</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="meta-account-name"></div>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="disconnectMeta()" style="color:var(--accent-red);border-color:var(--accent-red)">Disconnect</button>
+        <button class="btn btn-secondary btn-sm" onclick="disconnectMeta()" style="margin-left:auto;color:var(--accent-red)">Disconnect</button>
       </div>
     </div>
 
-    <div style="margin-top:20px;display:flex;gap:10px">
-      <button class="btn btn-secondary" onclick="closeMetaModal()" style="flex:1;justify-content:center">Cancel</button>
+    <div style="margin-top:8px">
+      <button class="btn btn-secondary btn-sm" onclick="closeMetaModal()" style="width:100%;justify-content:center">Close</button>
     </div>
   </div>
 </div>
@@ -1501,6 +1483,7 @@ function updateShopifyBadge() {
 }
 
 // ===== META ADS CONNECTION =====
+const META_APP_ID = '1433754451871381';
 let metaEditingStoreId = null;
 let metaPendingToken = null;
 
@@ -1515,10 +1498,13 @@ function openMetaModal(storeId) {
   modal.style.display = 'flex';
   
   // Reset UI
-  document.getElementById('meta-token-input').value = '';
+  const tokenInput = document.getElementById('meta-token-input');
+  if (tokenInput) tokenInput.value = '';
   document.getElementById('meta-account-picker').style.display = 'none';
   document.getElementById('meta-connected-info').style.display = 'none';
   document.getElementById('meta-modal-status').innerHTML = '';
+  const manualSection = document.getElementById('meta-manual-section');
+  if (manualSection) manualSection.style.display = 'none';
 
   // Show connected info if already linked
   const stores = getStores();
@@ -1536,20 +1522,51 @@ function closeMetaModal() {
   metaPendingToken = null;
 }
 
-// Handle manual token test
-async function testMetaConnection() {
-  const btn = document.getElementById('meta-test-btn');
+// ─── Facebook Login OAuth popup ───
+function facebookLogin() {
   const statusEl = document.getElementById('meta-modal-status');
-  const tokenInput = document.getElementById('meta-token-input');
-  const token = tokenInput ? tokenInput.value.trim() : '';
+  const appId = META_APP_ID;
 
-  if (!token) {
-    statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Please paste your Meta access token.</div>';
+  if (!appId) {
+    statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Meta App ID not configured.</div>';
     return;
   }
 
-  if (btn) { btn.textContent = '⏳ Testing...'; btn.disabled = true; }
-  
+  const redirectUri = window.location.origin + '/dashboard.html';
+  const scope = 'ads_read,read_insights';
+  const authUrl = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=token`;
+
+  const popup = window.open(authUrl, 'meta_login', 'width=600,height=700,scrollbars=yes');
+
+  const checkPopup = setInterval(() => {
+    try {
+      if (!popup || popup.closed) {
+        clearInterval(checkPopup);
+        return;
+      }
+      if (popup.location.origin === window.location.origin) {
+        const hash = popup.location.hash;
+        popup.close();
+        clearInterval(checkPopup);
+
+        if (hash && hash.includes('access_token=')) {
+          const params = new URLSearchParams(hash.substring(1));
+          const token = params.get('access_token');
+          if (token) {
+            handleMetaToken(token);
+          }
+        }
+      }
+    } catch (e) {}
+  }, 500);
+}
+
+// Handle token from either Facebook Login or manual entry
+async function handleMetaToken(token) {
+  const statusEl = document.getElementById('meta-modal-status');
+  const loginBtn = document.getElementById('meta-fb-login-btn');
+  if (loginBtn) { loginBtn.textContent = '⏳ Connecting...'; loginBtn.disabled = true; }
+
   try {
     const res = await fetch('/.netlify/functions/meta?action=test', {
       headers: { 'X-Meta-Token': token }
@@ -1558,16 +1575,14 @@ async function testMetaConnection() {
 
     if (data.connected && data.adAccounts && data.adAccounts.length > 0) {
       metaPendingToken = token;
-
-      // Show account picker
       const select = document.getElementById('meta-account-select');
       select.innerHTML = data.adAccounts.map(a =>
         `<option value="${a.id}" data-name="${a.name}">${a.name} (${a.account_id}) — ${a.currency}</option>`
       ).join('');
       document.getElementById('meta-account-picker').style.display = 'block';
-      statusEl.innerHTML = '<div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-green)">✅ Token verified! Select your ad account below.</div>';
+      statusEl.innerHTML = '<div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-green)">✅ Login successful! Select your ad account below.</div>';
     } else if (data.connected) {
-      statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Token works but no ad accounts found. Make sure you added `ads_read` permission.</div>';
+      statusEl.innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ No ad accounts found.</div>';
     } else {
       statusEl.innerHTML = `<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ ${data.message || 'Connection failed.'}</div>`;
     }
@@ -1575,7 +1590,10 @@ async function testMetaConnection() {
     statusEl.innerHTML = `<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Error: ${err.message}</div>`;
   }
 
-  if (btn) { btn.textContent = '🔗 Connect'; btn.disabled = false; }
+  if (loginBtn) {
+    loginBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> Login with Facebook';
+    loginBtn.disabled = false;
+  }
 }
 
 function saveSelectedMetaAccount() {
@@ -1604,6 +1622,22 @@ function saveSelectedMetaAccount() {
   setTimeout(() => closeMetaModal(), 2000);
 }
 
+// Manual token test
+async function testMetaConnection() {
+  const btn = document.getElementById('meta-test-btn');
+  const tokenInput = document.getElementById('meta-token-input');
+  const token = tokenInput ? tokenInput.value.trim() : '';
+
+  if (!token) {
+    document.getElementById('meta-modal-status').innerHTML = '<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-red)">⚠️ Please paste your Meta access token.</div>';
+    return;
+  }
+
+  if (btn) { btn.textContent = '⏳ Testing...'; btn.disabled = true; }
+  await handleMetaToken(token);
+  if (btn) { btn.textContent = '🔗 Test Token'; btn.disabled = false; }
+}
+
 function disconnectMeta() {
   const stores = getStores();
   const idx = stores.findIndex(s => s.id === metaEditingStoreId);
@@ -1613,7 +1647,6 @@ function disconnectMeta() {
     stores[idx].metaAccountName = '';
     saveStores(stores);
   }
-  document.getElementById('meta-token-input').value = '';
   document.getElementById('meta-connected-info').style.display = 'none';
   document.getElementById('meta-account-picker').style.display = 'none';
   document.getElementById('meta-modal-status').innerHTML = '<div style="background:rgba(56,139,253,0.1);border:1px solid rgba(56,139,253,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent-blue)">Meta Ads disconnected.</div>';
