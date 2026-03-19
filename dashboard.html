@@ -348,7 +348,6 @@
     </div>
     <div class="tokens-pill">⚡ <span>100</span> <span style="color:var(--text-muted);font-size:10px">tokens</span></div>
     <button class="tb-btn" onclick="toggleDatePanel()" title="Date Range">📅</button>
-    <button class="tb-btn" onclick="refreshShopifyData()" title="Refresh Data" style="font-size:12px">↻</button>
     <button class="tb-btn" title="Calendar">🗓</button>
     <button class="tb-btn" title="Team">👥</button>
     <button class="tb-btn" title="Settings">⚙️</button>
@@ -413,6 +412,7 @@
   <!-- ===== HOME PAGE ===== -->
   <div id="page-home" class="page">
     <div class="page-header-row">
+      <div style="cursor:pointer;font-size:18px;margin-right:8px;color:var(--text-muted)" onclick="showPage('accounts')" title="Back">←</div>
       <div class="title-container">
         <div class="page-title" style="display:flex;align-items:baseline;gap:10px">
           Hello Lloyd 👋
@@ -1018,6 +1018,7 @@
   </div>
   <div class="date-field"><label>From</label><input type="date" value="2026-03-18"></div>
   <div class="date-field"><label>To</label><input type="date" value="2026-03-18"></div>
+  <button class="btn btn-secondary btn-sm" onclick="refreshShopifyData(); toggleDatePanel();" style="width:100%;margin-top:10px;color:var(--accent-green)">↻ Refresh Data</button>
 </div>
 
 <!-- CURRENCY PANEL (inline toggle) -->
