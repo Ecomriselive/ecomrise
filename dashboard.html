@@ -2201,7 +2201,7 @@ function renderMetaCampaigns(campaigns) {
   if (!tbody) return;
 
   // Only show LIVE (ACTIVE) campaigns
-  const liveCampaigns = campaigns.filter(c => c.effective_status === 'ACTIVE');
+  const liveCampaigns = campaigns.filter(c => c.status === 'ACTIVE' || c.effective_status === 'ACTIVE');
 
   tbody.innerHTML = liveCampaigns.map(c => `
     <tr>
