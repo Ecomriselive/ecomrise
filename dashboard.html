@@ -378,6 +378,7 @@
     <div class="nav-item" onclick="showPage('daily-trends')"><span class="icon">📅</span><span class="label">Daily Trends</span></div>
     <div class="nav-item" onclick="showPage('winning-ads')"><span class="icon">🏆</span><span class="label">Winning Ads</span></div>
     <div class="nav-item" onclick="showPage('finance')"><span class="icon">💰</span><span class="label">Finance</span></div>
+    <div class="nav-item" onclick="showPage('fulfilment')"><span class="icon">📦</span><span class="label">Fulfilment</span></div>
   </div>
   <div class="sidebar-section">
     <div class="sidebar-section-label">Community <span>+</span></div>
@@ -799,6 +800,17 @@
     <!-- Custom tables will go here -->
   </div>
 
+
+  <!-- ===== FULFILMENT PAGE ===== -->
+  <div id="page-fulfilment" class="page" style="display:none">
+    <div class="page-header-row">
+      <div class="title-container">
+        <div class="page-title">Fulfilment</div>
+        <div class="page-subtitle">Order fulfilment tracking and analytics</div>
+      </div>
+    </div>
+    <!-- Custom fulfilment content will go here -->
+  </div>
 
   <!-- ===== MESSAGES PAGE ===== -->
   <div id="page-messages" class="page" style="display:none">
@@ -1797,7 +1809,7 @@ function goBack() {
 }
 
 // Pages that should show the date picker
-const analyticsPages = ['home', 'shopify', 'meta-ads', 'campaigns', 'ad-sets', 'daily-trends', 'winning-ads', 'finance'];
+const analyticsPages = ['home', 'shopify', 'meta-ads', 'campaigns', 'ad-sets', 'daily-trends', 'winning-ads', 'finance', 'fulfilment'];
 
 // Campaign display state
 let campaignLiveFilter = 'live'; // 'live' or 'all'
