@@ -1233,6 +1233,10 @@ function setActiveStore(id) {
   
   // Navigate to home and reload all data for the new store
   showPage('home');
+  
+  // Explicitly trigger re-load to be 100% sure
+  loadShopifyData(true);
+  loadMetaData(true);
 }
 
 // Clear all data-driven UI so stale data from previous store doesn't show
@@ -2048,22 +2052,30 @@ async function loadMetaData(forceRefresh = false) {
       MetaAdsAPI.getCampaigns(range.since, range.until)
     ]);
 
-    if (stats) {
-      liveMetaStats = stats;
-      renderMetaKPIs(stats);
-      renderHomePageMeta(stats);
-      renderMetaDailyTrends(stats);
-    }
-    if (campaignsData) {
-      lastMetaData = campaignsData;
-      liveMetaCampaigns = campaignsData.campaigns;
-      renderMetaCampaigns(campaignsData.campaigns);
-      renderCampaignPerformancePage(campaignsData.campaigns);
-      renderAdSetsPage(campaignsData.campaigns);
-      renderHomeCampaignTable(campaignsData.campaigns);
+    if (stats || campaignsData) {
+      if (stats) {
+        liveMetaStats = stats;
+        renderMetaKPIs(stats);
+        renderHomePageMeta(stats);
+        renderMetaDailyTrends(stats);
+      }
+      if (campaignsData) {
+        lastMetaData = campaignsData;
+        liveMetaCampaigns = campaignsData.campaigns;
+        renderMetaCampaigns(campaignsData.campaigns);
+        renderCampaignPerformancePage(campaignsData.campaigns);
+        renderAdSetsPage(campaignsData.campaigns);
+        renderHomeCampaignTable(campaignsData.campaigns);
+      }
+    } else {
+      throw new Error('No data returned from Meta API');
     }
   } catch (err) {
     console.error('Failed to load Meta data:', err);
+    const metaTbody = document.querySelector('#page-meta-ads .data-table tbody');
+    if (metaTbody) metaTbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--accent-red);padding:20px">⚠️ Error: ${err.message}. Try refreshing.</td></tr>`;
+    const homeTbody = document.querySelector('#page-home .section-card .data-table tbody');
+    if (homeTbody) homeTbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--accent-red);padding:20px">⚠️ Error loading campaign data.</td></tr>`;
   }
 }
 
