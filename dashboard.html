@@ -2748,7 +2748,7 @@ function renderFulfilmentOrders(orders) {
   });
 }
 
-// AI-Driven Real Tracking Fetcher using track.dog proxy
+// AI-Driven Real Tracking Fetcher using 17Track Proxy
 async function resolveRealTracking(orderId, trackingNumber) {
   const cell = document.getElementById(`smart-status-${orderId}`);
   if (!cell) return;
@@ -2760,6 +2760,11 @@ async function resolveRealTracking(orderId, trackingNumber) {
     const data = await res.json();
     
     // Apply the smart status based on our backend proxy's analysis
+    if (data.status === 'No API Key') {
+      cell.innerHTML = `<span class="pill red fade-in" title="Add SEVENTEEN_TRACK_KEY to Netlify">Missing API Key</span>`;
+      return;
+    }
+
     if (data.status === 'Delivered') {
       cell.innerHTML = `<span class="pill green fade-in">Delivered</span>`;
     } else if (data.status === 'In Transit') {
