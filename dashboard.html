@@ -140,6 +140,26 @@
   .data-table .positive { color: var(--accent-green); }
   .data-table .negative { color: var(--accent-red); }
 
+  /* PILLS */
+  .pill {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .pill.green { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+  .pill.blue { background: rgba(88,166,255,0.15); color: var(--accent-blue); }
+  .pill.orange { background: rgba(210,153,34,0.15); color: var(--accent-orange); }
+  .pill.red { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+  .pill.gray { background: var(--bg-hover); color: var(--text-muted); }
+
+  .fade-in { animation: fadeIn 0.3s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
   /* CHART CONTAINERS */
   .chart-wrap { position:relative; }
   .chart-canvas-wrap { padding:10px 14px 14px; }
@@ -2699,8 +2719,8 @@ function renderFulfilmentOrders(orders) {
       ? (o.tracking_url ? `<a href="${o.tracking_url}" target="_blank" style="color:var(--accent-blue);text-decoration:none">${o.tracking_number}</a>` : o.tracking_number)
       : '<span style="color:var(--text-muted)">—</span>';
     
-    // Smart AI Status Interpreter
-    const aiStatus = interpretTrackingAI(o);
+    // Set an initial loading state
+    const statusCellId = `smart-status-${o.id}`;
 
     return `
       <tr>
@@ -2708,40 +2728,52 @@ function renderFulfilmentOrders(orders) {
         <td>${fmtDate(o.created_at)}</td>
         <td>${o.customer}</td>
         <td><span class="pill ${paymentPill}">${o.financial_status.toUpperCase()}</span></td>
-        <td><span class="pill ${aiStatus.pill}">${aiStatus.label}</span></td>
+        <td id="${statusCellId}"><span class="pill gray">⏳ Loading AI...</span></td>
         <td>${trackingDisplay}</td>
         <td>${o.shipping_country}</td>
         <td><span style="font-weight:600">${fmt(o.total)}</span></td>
       </tr>
     `;
   }).join('');
+
+  // 2. Fire off async tasks to fetch real tracking data for every order
+  orders.forEach(o => {
+    if (o.tracking_number && o.tracking_number.length > 0) {
+      resolveRealTracking(o.id, o.tracking_number);
+    } else {
+      // No tracking number = Not Shipped
+      const cell = document.getElementById(`smart-status-${o.id}`);
+      if (cell) cell.innerHTML = `<span class="pill gray">Not Shipped</span>`;
+    }
+  });
 }
 
-// AI-Driven Tracking Status Interpreter
-function interpretTrackingAI(order) {
-  const f = order.fulfillment_status;
-  const s = order.shipment_status;
-  const hasTracking = order.tracking_number && order.tracking_number.length > 0;
+// AI-Driven Real Tracking Fetcher
+async function resolveRealTracking(orderId, trackingNumber) {
+  const cell = document.getElementById(`smart-status-${orderId}`);
+  if (!cell) return;
 
-  // 1. Delivered (Final State)
-  if (s === 'delivered') {
-    return { label: 'Delivered', pill: 'green' };
-  }
-
-  // 2. In Delivery (Active State)
-  if (f === 'fulfilled' || f === 'partial' || hasTracking) {
-    const inDeliveryStates = ['in_transit', 'out_for_delivery', 'ready_for_pickup', 'attempted_delivery', 'confirmed'];
-    if (inDeliveryStates.includes(s)) {
-      return { label: 'In Delivery', pill: 'blue' };
+  try {
+    // Ping our new Netlify function proxy
+    const res = await fetch(`/.netlify/functions/track?trackingNumber=${encodeURIComponent(trackingNumber)}`);
+    if (!res.ok) throw new Error('API failed');
+    const data = await res.json();
+    
+    // Apply the smart status based on our proxy's analysis
+    if (data.status === 'Delivered') {
+      cell.innerHTML = `<span class="pill green fade-in">Delivered</span>`;
+    } else if (data.status === 'In Transit') {
+      cell.innerHTML = `<span class="pill blue fade-in">In Transit</span>`;
+    } else if (data.status === 'Exception') {
+      cell.innerHTML = `<span class="pill orange fade-in">Exception</span>`;
+    } else {
+      cell.innerHTML = `<span class="pill gray fade-in">No Movement</span>`;
     }
-    // If it has a tracking number but status is null, it's still "In Delivery" (shipped)
-    if (hasTracking) {
-      return { label: 'In Delivery', pill: 'blue' };
-    }
+  } catch (err) {
+    console.warn('Real tracking failed for', trackingNumber, err);
+    // Fallback if the proxy fails: show generic "In Delivery"
+    cell.innerHTML = `<span class="pill blue fade-in" title="Tracking API error">In Delivery</span>`;
   }
-
-  // 3. Not Shipped (Pre-shipment State)
-  return { label: 'Not Shipped', pill: 'gray' };
 }
 
 function renderCampaignPerformancePage(campaigns) {
