@@ -2164,6 +2164,9 @@ async function loadShopifyData(forceRefresh = false, pageInfo = null) {
         if (val) val.textContent = '⚠️ Error';
       }
     });
+
+    const tbody = document.getElementById('fulfilment-orders-tbody');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--accent-red);padding:20px">⚠️ Error loading orders. Please check your Shopify connection or try refreshing.</td></tr>`;
   } finally {
     isShopifyDataLoading = false;
   }
