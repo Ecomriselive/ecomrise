@@ -277,11 +277,13 @@ function getNextPageUrl(linkHeader) {
 
 function getCursor(linkHeader, rel) {
   if (!linkHeader) return null;
-  const regex = new RegExp(`<[^?]+\\?([^>]+)>;\\s*rel="${rel}"`);
-  const matches = linkHeader.match(regex);
-  if (!matches) return null;
-  const qs = new URLSearchParams(matches[1]);
-  return qs.get('page_info');
+  const parts = linkHeader.split(',');
+  const relPart = parts.find(p => p.includes(`rel="${rel}"`));
+  if (!relPart) return null;
+  const match = relPart.match(/<([^>]+)>/);
+  if (!match) return null;
+  const url = new URL(match[1]);
+  return url.searchParams.get('page_info');
 }
 
 function thirtyDaysAgo() {
