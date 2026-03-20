@@ -8,55 +8,71 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Use the native global fetch (available in Node 18+)
+  const apiKey = process.env.SEVENTEEN_TRACK_KEY;
+  if (!apiKey) {
+    return {
+      statusCode: 200,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ status: 'No API Key', message: 'API Key Required' })
+    };
+  }
+
   try {
-    const url = `https://api.track.dog/v1/track/track_details?tracking_number=${encodeURIComponent(trackingNumber)}`;
-    console.log("Fetching track.dog:", url);
-    const res = await fetch(url, {
+    const fetch = (await import('node-fetch')).default || globalThis.fetch;
+    
+    // First, register the tracking number with 17Track
+    await fetch('https://api.17track.net/track/v2.2.4/register', {
+      method: 'POST',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-        'Accept': 'application/json, text/plain, */*',
-        'Referer': 'https://track.dog/'
-      }
+        '17token': apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify([{ "number": trackingNumber }])
+    });
+
+    // Then, fetch the tracking info
+    const res = await fetch('https://api.17track.net/track/v2.2.4/gettrackinfo', {
+      method: 'POST',
+      headers: {
+        '17token': apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify([{ "number": trackingNumber }])
     });
     
     if (!res.ok) {
-      console.log("Track.dog API error:", res.status);
       return {
         statusCode: res.status,
         headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'Track API rejected' })
+        body: JSON.stringify({ error: '17Track API rejected', status: 'No Movement' })
       };
     }
     
     const data = await res.json();
-    
-    // Analyze Track.dog's payload
-    // Track.dog standard response shape contains events
     let analyzedStatus = 'No Movement';
-    
-    if (data && data.data && data.data.status) {
-      // Map track.dog internal code -> our status
-      const trackDogStatus = (data.data.status || '').toLowerCase();
-      if (trackDogStatus === 'delivered' || trackDogStatus === 'success') {
-          analyzedStatus = 'Delivered';
-      } else if (trackDogStatus === 'in_transit' || trackDogStatus === 'transit' || trackDogStatus === 'pickup' || trackDogStatus === 'active') {
-          analyzedStatus = 'In Transit';
-      } else if (trackDogStatus === 'notfound' || trackDogStatus === 'pending') {
-          analyzedStatus = 'No Movement';
-      }
-      
-      // Secondary check: look at events if status isn't clear
-      if (analyzedStatus === 'No Movement' && data.data.events && data.data.events.length > 0) {
-         // Has events, so it physically left
-         const latestEvent = data.data.events[0].description ? data.data.events[0].description.toLowerCase() : '';
-         if (latestEvent.includes('receive') && data.data.events.length === 1) {
-            analyzedStatus = 'No Movement'; // electronic info received
-         } else if (latestEvent.includes('deliver')) {
+
+    // 17track response status logic
+    if (data && data.data && data.data.accepted && data.data.accepted.length > 0) {
+      const trackData = data.data.accepted[0].track;
+      if (trackData) {
+        const statusCode = trackData.b || trackData.e; // 17track status code
+        if (statusCode === 40) {
             analyzedStatus = 'Delivered';
-         } else {
+        } else if (statusCode === 20 || statusCode === 30) {
             analyzedStatus = 'In Transit';
-         }
+        } else if (statusCode === 10) {
+            analyzedStatus = 'No Movement'; // Not found
+        } else {
+            // Check events
+            if (trackData.z1 && trackData.z1.length > 0) {
+                const latestEvent = trackData.z1[0].z || '';
+                if (latestEvent.toLowerCase().includes('deliver')) {
+                  analyzedStatus = 'Delivered';
+                } else {
+                   analyzedStatus = 'In Transit';
+                }
+            }
+        }
       }
     }
 
