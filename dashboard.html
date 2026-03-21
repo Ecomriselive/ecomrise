@@ -1478,7 +1478,7 @@ function renderAccountsPage() {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px">
         <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
           <span style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name || s.shopifyStore || 'Unnamed Store'}</span>
-          ${isActive ? '<span class="pill blue" style="font-size:10px;flex-shrink:0">✓ ACTIVE</span>' : ''}
+          ${isActive ? '<span class="pill blue" style="font-size:10px;flex-shrink:0">✓ SELECTED</span>' : ''}
         </div>
         <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();removeStore('${s.id}')" style="color:var(--accent-red);font-size:10px;padding:2px 6px;flex-shrink:0" title="Remove store">✕</button>
       </div>
