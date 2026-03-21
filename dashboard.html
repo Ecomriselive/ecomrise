@@ -1475,10 +1475,12 @@ function renderAccountsPage() {
     const metaOk = s.metaToken;
     html += `
     <div style="background:var(--bg-card);border:2px solid ${isActive ? 'var(--accent-blue)' : 'var(--border)'};border-radius:10px;padding:16px;position:relative;transition:all 0.2s;cursor:pointer" onclick="setActiveStore('${s.id}')">
-      ${isActive ? '<div style="position:absolute;top:-10px;left:16px"><span class="pill blue" style="font-size:10px">✓ ACTIVE</span></div>' : ''}
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <span style="font-size:14px;font-weight:700">${s.name || s.shopifyStore || 'Unnamed Store'}</span>
-        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();removeStore('${s.id}')" style="color:var(--accent-red);font-size:10px;padding:2px 6px" title="Remove store">✕</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
+          <span style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name || s.shopifyStore || 'Unnamed Store'}</span>
+          ${isActive ? '<span class="pill blue" style="font-size:10px;flex-shrink:0">✓ ACTIVE</span>' : ''}
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();removeStore('${s.id}')" style="color:var(--accent-red);font-size:10px;padding:2px 6px;flex-shrink:0" title="Remove store">✕</button>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
@@ -1500,8 +1502,8 @@ function renderAccountsPage() {
       </div>
 
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${shopifyOk ? '<span class="pill green">Shopify connected</span>' : '<span class="pill gray">Shopify not connected</span>'}
-        ${metaOk ? '<span class="pill green">Meta connected</span>' : '<span class="pill gray">Meta not connected</span>'}
+        ${shopifyOk ? '<span class="pill green">✓ Shopify Connected</span>' : '<span class="pill gray">✕ Shopify Disconnected</span>'}
+        ${metaOk ? '<span class="pill green">✓ Meta Connected</span>' : '<span class="pill gray">✕ Meta Disconnected</span>'}
       </div>
     </div>`;
   });
