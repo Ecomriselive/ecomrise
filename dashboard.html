@@ -521,7 +521,16 @@
         <div class="page-title">Shopify Analytics</div>
         <div class="page-subtitle">Live store data · 2026-02-16 → 2026-03-18</div>
       </div>
-      <button class="btn btn-secondary btn-sm refresh-shopify-btn" onclick="refreshShopifyData()">↻ Refresh</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <select id="currency-selector" onchange="changeCurrency(this.value)" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);font-size:12px;height:28px;cursor:pointer">
+          <option value="EUR">Euros (€)</option>
+          <option value="USD">USD ($)</option>
+          <option value="AUD">AUD (A$)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="CAD">CAD (C$)</option>
+        </select>
+        <button class="btn btn-secondary btn-sm refresh-shopify-btn" onclick="refreshShopifyData()">↻ Refresh</button>
+      </div>
     </div>
     <div class="shopify-metric-cards">
       <div class="smc blue"><div class="smc-label">Total Revenue</div><div class="smc-value">€11,047.54</div><div class="smc-change positive">↑ 495.6%</div></div>
@@ -2230,8 +2239,19 @@ async function refreshShopifyData() {
 }
 
 // ===== FORMAT HELPERS =====
+function getCurrency() {
+  return localStorage.getItem('ecr_currency') || 'EUR';
+}
+function changeCurrency(val) {
+  localStorage.setItem('ecr_currency', val);
+  loadShopifyData(true);
+}
+
 function fmt(n, decimals = 2) {
-  return '€' + Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const currency = getCurrency();
+  const locales = { 'EUR': 'de-DE', 'USD': 'en-US', 'AUD': 'en-AU', 'GBP': 'en-GB', 'CAD': 'en-CA' };
+  const locale = locales[currency] || 'en-US';
+  return Number(n || 0).toLocaleString(locale, { style: 'currency', currency: currency, minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 function fmtPct(n) { return Number(n || 0).toFixed(1) + '%'; }
 
@@ -3110,6 +3130,10 @@ function signOut() {
 }
 
 // ===== INIT =====
+const initialCurrency = localStorage.getItem('ecr_currency') || 'EUR';
+const currSelect = document.getElementById('currency-selector');
+if (currSelect) currSelect.value = initialCurrency;
+
 updateShopifyBadge();
 updateMetaBadge();
 updateTopbarStoreName();
