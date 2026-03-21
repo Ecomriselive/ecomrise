@@ -949,6 +949,7 @@
         <div class="page-title">AI Assistant</div>
         <div class="page-subtitle">Powered by Claude · Ask anything about your ad performance</div>
       </div>
+      <button class="btn btn-secondary btn-sm" onclick="promptAnthropicKey()" title="Configure your AI connection">⚙️ Setup API Key</button>
     </div>
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;height:calc(100vh - 200px);display:flex;flex-direction:column;margin-top:14px">
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
@@ -3085,23 +3086,44 @@ async function sendAiMessage() {
   }
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const apiKey = localStorage.getItem('ecr_anthropic_key') || '';
+    
+    const res = await fetch('/.netlify/functions/claude', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-anthropic-key': apiKey
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-latest',
         max_tokens: 1000,
         system: context,
         messages: [{ role: 'user', content: msg }]
       })
     });
+    
     const data = await res.json();
     thinking.remove();
+    
+    if (!res.ok) {
+       appendAiMsg(`API Error: ${data.message || data.error?.message || 'Failed to authenticate via proxy.'}`, 'bot');
+       return;
+    }
+    
     const reply = data.content?.[0]?.text || 'Sorry, I could not get a response.';
     appendAiMsg(reply, 'bot');
   } catch(e) {
     thinking.remove();
-    appendAiMsg('Connection error. Please check your setup.', 'bot');
+    appendAiMsg('Connection error. Please check your Netlify proxy or API Key.', 'bot');
+  }
+}
+
+function promptAnthropicKey() {
+  const current = localStorage.getItem('ecr_anthropic_key') || '';
+  const key = prompt('Enter your Anthropic API Key (sk-ant-...)\nLeave blank to use the server environment variable instead.', current);
+  if (key !== null) {
+    localStorage.setItem('ecr_anthropic_key', key.trim());
+    alert('API Key saved locally in your browser!');
   }
 }
 function aiQuickPrompt(msg) {
