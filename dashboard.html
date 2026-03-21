@@ -2174,6 +2174,14 @@ async function loadShopifyData(forceRefresh = false, pageInfo = null) {
 
     if (stats) {
       liveShopifyStats = stats;
+      
+      if (typeof currentBaseCurrency !== 'undefined') {
+        currentBaseCurrency = stats.currency || 'USD';
+        if (typeof getExchangeRate === 'function') {
+           await getExchangeRate(currentBaseCurrency, getCurrency());
+        }
+      }
+
       renderHomeKPIs(stats);
       renderShopifyPage(stats);
       shopifyDataLoaded = true;
@@ -2239,6 +2247,27 @@ async function refreshShopifyData() {
 }
 
 // ===== FORMAT HELPERS =====
+let exchangeRateCache = {};
+let currentBaseCurrency = 'EUR'; // Base fallback
+
+async function getExchangeRate(base, target) {
+  if (!base || !target || base === target) return 1;
+  const key = `${base}_${target}`;
+  if (exchangeRateCache[key]) return exchangeRateCache[key];
+
+  try {
+    const res = await fetch(`https://open.er-api.com/v6/latest/${base}`);
+    const data = await res.json();
+    if (data && data.rates && data.rates[target]) {
+      exchangeRateCache[key] = data.rates[target];
+      return data.rates[target];
+    }
+  } catch (err) {
+    console.error("Exchange rate fetch error:", err);
+  }
+  return 1;
+}
+
 function getCurrency() {
   return localStorage.getItem('ecr_currency') || 'EUR';
 }
@@ -2248,10 +2277,14 @@ function changeCurrency(val) {
 }
 
 function fmt(n, decimals = 2) {
-  const currency = getCurrency();
+  const targetCurrency = getCurrency();
+  const rateKey = `${currentBaseCurrency}_${targetCurrency}`;
+  const rate = (currentBaseCurrency === targetCurrency) ? 1 : (exchangeRateCache[rateKey] || 1);
+  const converted = Number(n || 0) * rate;
+
   const locales = { 'EUR': 'de-DE', 'USD': 'en-US', 'AUD': 'en-AU', 'GBP': 'en-GB', 'CAD': 'en-CA' };
-  const locale = locales[currency] || 'en-US';
-  return Number(n || 0).toLocaleString(locale, { style: 'currency', currency: currency, minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const locale = locales[targetCurrency] || 'en-US';
+  return converted.toLocaleString(locale, { style: 'currency', currency: targetCurrency, minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 function fmtPct(n) { return Number(n || 0).toFixed(1) + '%'; }
 

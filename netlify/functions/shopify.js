@@ -198,8 +198,10 @@ exports.handler = async (event) => {
 
         const completedPurchase = allOrders.filter(o => o.financial_status !== 'voided' && !o.cancelled_at).length;
         const abandoned = totalOrders - completedPurchase;
+        const currency = allOrders.length > 0 ? allOrders[0].currency : 'USD';
 
         return respond(200, {
+          currency,
           totalRevenue: round2(totalRevenue),
           totalOrders,
           aov: round2(aov),
